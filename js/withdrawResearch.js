@@ -5,7 +5,7 @@
 (function($) {
     'use strict';
 
-    console.log('[WithdrawResearchPlugin] script initialized.');
+    console.log('[WithdrawResearchPlugin] initialized with config:', window.withdrawResearchPluginConfig);
 
     function getSubmissionId() {
         var cfg = window.withdrawResearchPluginConfig || {};
@@ -14,35 +14,14 @@
         }
 
         var href = window.location.href;
-
-        // 1. OJS 3.5 Dashboard param: ?workflowSubmissionId=65952
         var matchWorkflowParam = href.match(/[?&]workflowSubmissionId=(\d+)/i);
         if (matchWorkflowParam && matchWorkflowParam[1]) {
             return parseInt(matchWorkflowParam[1], 10);
         }
 
-        // 2. Query param: ?submissionId=65952
         var paramMatch = href.match(/[?&]submissionId=(\d+)/i);
         if (paramMatch && paramMatch[1]) {
             return parseInt(paramMatch[1], 10);
-        }
-
-        // 3. Path param: /workflow/index/65952 or /authorDashboard/submission/65952
-        var pathMatch = href.match(/(?:workflow|authorDashboard|submission|submissions)(?:\/index|\/submission)?\/(\d+)/i);
-        if (pathMatch && pathMatch[1]) {
-            return parseInt(pathMatch[1], 10);
-        }
-
-        // 4. Inspect global pkp Vue state if present
-        if (window.pkp && window.pkp.context && window.pkp.context.submission) {
-            return parseInt(window.pkp.context.submission.id, 10);
-        }
-
-        // 5. Look for identification number in .pkpWorkflow__identification
-        var $idText = $('.pkpWorkflow__identificationId, .pkpWorkflow__identification').first().text();
-        var idMatch = $idText ? $idText.match(/(\d+)/) : null;
-        if (idMatch && idMatch[1]) {
-            return parseInt(idMatch[1], 10);
         }
 
         return 0;
@@ -50,11 +29,10 @@
 
     function buildModalUrl(subId) {
         var cfg = window.withdrawResearchPluginConfig || {};
-        if (cfg.modalUrl && cfg.modalUrl.length > 5 && cfg.submissionId === subId) {
+        if (cfg.modalUrl && cfg.modalUrl.length > 5 && parseInt(cfg.submissionId, 10) === subId) {
             return cfg.modalUrl;
         }
 
-        // Extract base and journal from window.location
         var base = window.location.pathname.split('/index.php/')[0] || '';
         var journalPath = '';
         var parts = window.location.pathname.split('/');
@@ -72,69 +50,100 @@
         return '/authorWithdraw/modal?submissionId=' + subId;
     }
 
-    function injectButton() {
-        if ($('#btnAuthorWithdrawResearch').length > 0) {
-            return;
-        }
-
-        var subId = getSubmissionId();
-        if (!subId) {
-            return;
-        }
-
-        console.log('[WithdrawResearchPlugin] Detected submissionId:', subId);
-
+    function createWithdrawButton(subId) {
+        var cfg = window.withdrawResearchPluginConfig || {};
         var modalUrl = buildModalUrl(subId);
-        var btnText = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText) || 'Withdraw Research';
+        var btnText = cfg.btnText || (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText) || 'Withdraw Research';
 
-        var btnHtml = $(
+        var $btn = $(
             '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" ' +
             'style="background-color: #dc2626 !important; border: 1px solid #b91c1c !important; color: #fff !important; ' +
-            'font-weight: 600; margin: 0 10px; padding: 6px 14px; border-radius: 4px; cursor: pointer; ' +
-            'display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); z-index: 99999;">' +
+            'font-weight: 600; padding: 7px 16px; border-radius: 4px; cursor: pointer; margin: 0 10px; ' +
+            'display: inline-flex; align-items: center; gap: 7px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); z-index: 99999;">' +
             '<span class="fa fa-ban" aria-hidden="true"></span>' +
             '<span>' + btnText + '</span>' +
             '</button>'
         );
 
-        btnHtml.on('click', function(e) {
+        $btn.on('click', function(e) {
             e.preventDefault();
             var currentSubId = getSubmissionId();
             var currentUrl = buildModalUrl(currentSubId);
             openWithdrawModal(currentUrl);
         });
 
-        // 1. OJS 3.5 Vue Header Actions
+        return $btn;
+    }
+
+    function injectButton() {
+        if ($('#btnAuthorWithdrawResearch').length > 0) {
+            return true;
+        }
+
+        var subId = getSubmissionId();
+        if (!subId) {
+            return false;
+        }
+
+        var $btn = createWithdrawButton(subId);
+
+        // 1. OJS 3.5 Unified Dashboard Drawer / Workflow Header Actions
         var $target = $(
             '.pkpWorkflow__header .pkpHeader__actions, ' +
+            '.sideModal__actions, ' +
+            '.sideModal__header .pkpHeader__actions, ' +
             '.pkpHeader__actions, ' +
             '.app__pageActions, ' +
             '.stage_actions, ' +
             '.pkp_controllers_tab_workflow .pkpHeader__actions'
-        ).first();
+        ).filter(':visible').first();
+
+        if (!$target.length) {
+            $target = $('.pkpHeader__actions').first();
+        }
 
         if ($target.length) {
-            $target.prepend(btnHtml);
-            console.log('[WithdrawResearchPlugin] Button placed in header actions.');
-            return;
+            $target.prepend($btn);
+            console.log('[WithdrawResearchPlugin] Injected button into .pkpHeader__actions');
+            return true;
         }
 
         // 2. Next to identification heading
-        var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
+        var $idTarget = $('.pkpWorkflow__identification, .pkpWorkflow__header, h1.app__pageHeading').filter(':visible').first();
         if ($idTarget.length) {
-            var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="display: inline-block; vertical-align: middle; margin-left: 15px;"></div>').append(btnHtml);
+            var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="display: inline-block; vertical-align: middle; margin-left: 15px;"></div>').append($btn);
             $idTarget.after($wrapper);
-            console.log('[WithdrawResearchPlugin] Button placed next to heading.');
-            return;
+            console.log('[WithdrawResearchPlugin] Injected button after identification heading');
+            return true;
         }
 
-        // 3. Fallback: prepend to workflow container or modal drawer
-        var $container = $('.pkpWorkflow, #workflow, .pkp_submission_workflow, .pkp_page_content, [role="main"]').first();
+        // 3. Side modal / drawer body or workflow container
+        var $container = $(
+            '.sideModal__body, ' +
+            '.sideModal, ' +
+            '.pkpWorkflow, ' +
+            '#workflow, ' +
+            '.pkp_submission_workflow, ' +
+            '.pkp_page_content, ' +
+            '[role="main"]'
+        ).filter(':visible').first();
+
         if ($container.length) {
-            var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="padding: 10px 15px; margin: 10px 0; background: #fff; border-bottom: 1px solid #e2e8f0;"></div>').append(btnHtml);
+            var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="padding: 12px 18px; margin: 10px 0; background: #fff7ed; border: 1px solid #ffedd5; border-left: 4px solid #f97316; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">' +
+                '<span style="font-weight: 600; color: #9a3412;">Need to withdraw this submission from the journal?</span>' +
+            '</div>').append($btn);
             $container.prepend($wrapper2);
-            console.log('[WithdrawResearchPlugin] Button placed in workflow container.');
+            console.log('[WithdrawResearchPlugin] Injected banner into container');
+            return true;
         }
+
+        // 4. Fixed Floating Action Pill as guaranteed UI anchor
+        var $floatingPill = $(
+            '<div id="withdrawFloatingPill" style="position: fixed; bottom: 25px; right: 30px; z-index: 999999; box-shadow: 0 4px 15px rgba(0,0,0,0.25); border-radius: 50px; overflow: hidden;"></div>'
+        ).append($btn);
+        $('body').append($floatingPill);
+        console.log('[WithdrawResearchPlugin] Injected floating action pill into body.');
+        return true;
     }
 
     function openWithdrawModal(url) {
@@ -211,17 +220,21 @@
         injectButton();
     });
 
-    // Observer loop for Vue components mounting
+    // Observer loop for Vue side modal / drawer mounting
     var count = 0;
     var timer = setInterval(function() {
         count++;
-        injectButton();
-        if ($('#btnAuthorWithdrawResearch').length > 0 || count > 30) {
+        var success = injectButton();
+        if (success || count > 35) {
             clearInterval(timer);
         }
-    }, 350);
+    }, 300);
 
     $(document).ajaxComplete(function() {
+        injectButton();
+    });
+
+    window.addEventListener('popstate', function() {
         injectButton();
     });
 

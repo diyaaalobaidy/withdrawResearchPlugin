@@ -5,7 +5,7 @@
 (function($) {
     'use strict';
 
-    console.log('[WithdrawResearchPlugin] script loaded.');
+    console.log('[WithdrawResearchPlugin] script initialized.');
 
     function getSubmissionId() {
         var cfg = window.withdrawResearchPluginConfig || {};
@@ -13,28 +13,29 @@
             return parseInt(cfg.submissionId, 10);
         }
 
-        // 1. Try URL regex: e.g. /workflow/index/123, /authorDashboard/submission/123, /submission/123
         var href = window.location.href;
-        var match = href.match(/(?:workflow|authorDashboard|submission|submissions)(?:\/index|\/submission)?\/(\d+)/i);
-        if (match && match[1]) {
-            return parseInt(match[1], 10);
+
+        // 1. OJS 3.5 Dashboard param: ?workflowSubmissionId=65952
+        var matchWorkflowParam = href.match(/[?&]workflowSubmissionId=(\d+)/i);
+        if (matchWorkflowParam && matchWorkflowParam[1]) {
+            return parseInt(matchWorkflowParam[1], 10);
         }
 
-        // 2. Query param: ?submissionId=123
+        // 2. Query param: ?submissionId=65952
         var paramMatch = href.match(/[?&]submissionId=(\d+)/i);
         if (paramMatch && paramMatch[1]) {
             return parseInt(paramMatch[1], 10);
         }
 
-        // 3. Inspect global pkp Vue state if present
-        if (window.pkp && window.pkp.context && window.pkp.context.submission) {
-            return parseInt(window.pkp.context.submission.id, 10);
+        // 3. Path param: /workflow/index/65952 or /authorDashboard/submission/65952
+        var pathMatch = href.match(/(?:workflow|authorDashboard|submission|submissions)(?:\/index|\/submission)?\/(\d+)/i);
+        if (pathMatch && pathMatch[1]) {
+            return parseInt(pathMatch[1], 10);
         }
 
-        // 4. Inspect any DOM elements with data-submission-id or id in breadcrumb
-        var $subEl = $('[data-submission-id]').first();
-        if ($subEl.length && $subEl.data('submission-id')) {
-            return parseInt($subEl.data('submission-id'), 10);
+        // 4. Inspect global pkp Vue state if present
+        if (window.pkp && window.pkp.context && window.pkp.context.submission) {
+            return parseInt(window.pkp.context.submission.id, 10);
         }
 
         // 5. Look for identification number in .pkpWorkflow__identification
@@ -49,13 +50,12 @@
 
     function buildModalUrl(subId) {
         var cfg = window.withdrawResearchPluginConfig || {};
-        if (cfg.modalUrl && cfg.modalUrl.length > 5) {
+        if (cfg.modalUrl && cfg.modalUrl.length > 5 && cfg.submissionId === subId) {
             return cfg.modalUrl;
         }
 
-        // Construct standard URL from location
+        // Extract base and journal from window.location
         var base = window.location.pathname.split('/index.php/')[0] || '';
-        // Extract journal path
         var journalPath = '';
         var parts = window.location.pathname.split('/');
         for (var i = 0; i < parts.length; i++) {
@@ -78,6 +78,10 @@
         }
 
         var subId = getSubmissionId();
+        if (!subId) {
+            return;
+        }
+
         console.log('[WithdrawResearchPlugin] Detected submissionId:', subId);
 
         var modalUrl = buildModalUrl(subId);
@@ -100,7 +104,7 @@
             openWithdrawModal(currentUrl);
         });
 
-        // Try candidate insertion locations
+        // 1. OJS 3.5 Vue Header Actions
         var $target = $(
             '.pkpWorkflow__header .pkpHeader__actions, ' +
             '.pkpHeader__actions, ' +
@@ -111,23 +115,25 @@
 
         if ($target.length) {
             $target.prepend(btnHtml);
-            console.log('[WithdrawResearchPlugin] Button injected into actions.');
+            console.log('[WithdrawResearchPlugin] Button placed in header actions.');
             return;
         }
 
+        // 2. Next to identification heading
         var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
         if ($idTarget.length) {
             var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="display: inline-block; vertical-align: middle; margin-left: 15px;"></div>').append(btnHtml);
             $idTarget.after($wrapper);
-            console.log('[WithdrawResearchPlugin] Button injected next to header heading.');
+            console.log('[WithdrawResearchPlugin] Button placed next to heading.');
             return;
         }
 
-        var $container = $('.pkpWorkflow, #workflow, .pkp_submission_workflow, .pkp_page_content, #main').first();
+        // 3. Fallback: prepend to workflow container or modal drawer
+        var $container = $('.pkpWorkflow, #workflow, .pkp_submission_workflow, .pkp_page_content, [role="main"]').first();
         if ($container.length) {
             var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="padding: 10px 15px; margin: 10px 0; background: #fff; border-bottom: 1px solid #e2e8f0;"></div>').append(btnHtml);
             $container.prepend($wrapper2);
-            console.log('[WithdrawResearchPlugin] Button prepended to container.');
+            console.log('[WithdrawResearchPlugin] Button placed in workflow container.');
         }
     }
 
@@ -205,15 +211,15 @@
         injectButton();
     });
 
-    // Run interval for asynchronous Vue rendering
+    // Observer loop for Vue components mounting
     var count = 0;
     var timer = setInterval(function() {
         count++;
         injectButton();
-        if ($('#btnAuthorWithdrawResearch').length > 0 || count > 25) {
+        if ($('#btnAuthorWithdrawResearch').length > 0 || count > 30) {
             clearInterval(timer);
         }
-    }, 400);
+    }, 350);
 
     $(document).ajaxComplete(function() {
         injectButton();

@@ -191,12 +191,21 @@ class WithdrawResearchPlugin extends GenericPlugin
             ['contexts' => ['backend', 'frontend']]
         );
 
-        // Resolve submission ID across all possible sources in OJS 3.5
+        // 1. Check all OJS 3.5 request and query params for submission ID
         $submissionId = 0;
-        $submission = $templateMgr->getTemplateVars('submission');
+        if ($request->getUserVar('workflowSubmissionId')) {
+            $submissionId = (int) $request->getUserVar('workflowSubmissionId');
+        } elseif ($request->getUserVar('submissionId')) {
+            $submissionId = (int) $request->getUserVar('submissionId');
+        }
 
-        if ($submission && is_object($submission) && method_exists($submission, 'getId')) {
-            $submissionId = (int) $submission->getId();
+        // 2. Check template variables
+        $submission = null;
+        if ($submissionId === 0) {
+            $submission = $templateMgr->getTemplateVars('submission');
+            if ($submission && is_object($submission) && method_exists($submission, 'getId')) {
+                $submissionId = (int) $submission->getId();
+            }
         }
 
         if ($submissionId === 0) {
@@ -207,10 +216,7 @@ class WithdrawResearchPlugin extends GenericPlugin
             }
         }
 
-        if ($submissionId === 0 && $request->getUserVar('submissionId')) {
-            $submissionId = (int) $request->getUserVar('submissionId');
-        }
-
+        // 3. Check requested URL args (e.g. /workflow/index/65952)
         if ($submissionId === 0) {
             $requestedArgs = (array) $request->getRequestedArgs();
             foreach ($requestedArgs as $arg) {
@@ -221,10 +227,12 @@ class WithdrawResearchPlugin extends GenericPlugin
             }
         }
 
-        // Check SERVER URI path (e.g. /workflow/index/42, /authorDashboard/submission/42, /submissions/42)
+        // 4. Check $_SERVER URI path and query string
         if ($submissionId === 0) {
             $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
-            if (preg_match('#/(?:workflow|authorDashboard|submission|submissions)/(?:index/|submission/)?(\d+)#i', $uri, $matches)) {
+            if (preg_match('#[?&](?:workflowSubmissionId|submissionId)=(\d+)#i', $uri, $matches)) {
+                $submissionId = (int) $matches[1];
+            } elseif (preg_match('#/(?:workflow|authorDashboard|submission|submissions)/(?:index/|submission/)?(\d+)#i', $uri, $matches)) {
                 $submissionId = (int) $matches[1];
             }
         }
@@ -276,13 +284,6 @@ class WithdrawResearchPlugin extends GenericPlugin
             'date' => $withdrawalDate,
             'modalUrl' => $modalUrl,
             'submitUrl' => $submitUrl,
-            'checkUrl' => $request->getDispatcher()->url(
-                $request,
-                PKPApplication::ROUTE_PAGE,
-                null,
-                'authorWithdraw',
-                'modal'
-            ),
             'btnText' => __('plugins.generic.withdrawResearchPlugin.author.button'),
             'modalTitle' => __('plugins.generic.withdrawResearchPlugin.author.modalTitle'),
             'debug' => true,

@@ -174,10 +174,22 @@ class WithdrawResearchPlugin extends GenericPlugin
             return false;
         }
 
-        // Add custom CSS and JS
+        $user = $request->getUser();
+        $userId = $user ? (int) $user->getId() : 0;
+
+        // Add custom CSS and JS to backend context
         $baseUrl = $request->getBaseUrl() . '/' . $this->getPluginPath();
-        $templateMgr->addStyleSheet('withdrawResearchPluginCss', $baseUrl . '/css/withdrawResearch.css');
-        $templateMgr->addJavaScript('withdrawResearchPluginJs', $baseUrl . '/js/withdrawResearch.js');
+        $templateMgr->addStyleSheet(
+            'withdrawResearchPluginCss',
+            $baseUrl . '/css/withdrawResearch.css',
+            ['contexts' => ['backend', 'frontend']]
+        );
+
+        $templateMgr->addJavaScript(
+            'withdrawResearchPluginJs',
+            $baseUrl . '/js/withdrawResearch.js',
+            ['contexts' => ['backend', 'frontend']]
+        );
 
         // Extract submission ID from template variables, request, or URL args
         $submissionId = 0;
@@ -206,9 +218,6 @@ class WithdrawResearchPlugin extends GenericPlugin
                 }
             }
         }
-
-        $user = $request->getUser();
-        $userId = $user ? (int) $user->getId() : 0;
 
         $canWithdraw = false;
         $isWithdrawn = false;
@@ -277,7 +286,7 @@ class WithdrawResearchPlugin extends GenericPlugin
             };
         </script>';
 
-        $templateMgr->addHeader('withdrawResearchPluginVars', $scriptTag);
+        $templateMgr->addHeader('withdrawResearchPluginVars', $scriptTag, ['contexts' => ['backend', 'frontend']]);
 
         return false;
     }

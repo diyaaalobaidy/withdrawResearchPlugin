@@ -8,15 +8,24 @@
 (function($) {
     'use strict';
 
+    function getCfg() {
+        return window.withdrawResearchPluginConfig || {};
+    }
+
     function initAuthorWithdrawalUI() {
-        // If submission is already withdrawn, display banner
-        if (window.isSubmissionWithdrawn) {
+        var cfg = getCfg();
+
+        // 1. If submission is already withdrawn, display banner
+        if (cfg.isWithdrawn || window.isSubmissionWithdrawn) {
             renderWithdrawnBanner();
             return;
         }
 
-        // Only inject if user has permission to withdraw
-        if (!window.canWithdrawSubmission || !window.withdrawModalUrl) {
+        // 2. Only inject if user has permission to withdraw
+        var canWithdraw = cfg.canWithdraw !== undefined ? cfg.canWithdraw : window.canWithdrawSubmission;
+        var modalUrl = cfg.modalUrl || window.withdrawModalUrl;
+
+        if (!canWithdraw || !modalUrl) {
             return;
         }
 
@@ -31,9 +40,8 @@
             return;
         }
 
-        var btnText = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText)
-            ? window.pkpWithdrawLocales.btnText
-            : 'Withdraw Research';
+        var cfg = getCfg();
+        var btnText = cfg.btnText || (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText) || 'Withdraw Research';
 
         var btnHtml = $(
             '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border: 1px solid #b91c1c !important; color: #fff !important; font-weight: 600; margin: 0 10px; padding: 6px 14px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); z-index: 9999;">' +
@@ -47,7 +55,7 @@
             openWithdrawModal();
         });
 
-        // 1. Primary target: workflow header actions
+        // 1. Target: workflow header actions (.pkpWorkflow__header .pkpHeader__actions)
         var $actionsTarget = $(
             '.pkpWorkflow__header .pkpHeader__actions, ' +
             '.pkpHeader__actions, ' +
@@ -61,7 +69,7 @@
             return;
         }
 
-        // 2. Secondary target: right next to or after the workflow title/status
+        // 2. Target: next to or after the workflow title/status
         var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
         if ($idTarget.length) {
             var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="display: inline-block; vertical-align: middle; margin-left: 15px;"></div>').append(btnHtml);
@@ -81,22 +89,22 @@
      * Open AJAX modal for manuscript withdrawal
      */
     window.openWithdrawModal = function() {
+        var cfg = getCfg();
         var modalId = 'authorWithdrawModalDialog';
-        var title = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle)
-            ? window.pkpWithdrawLocales.modalTitle
-            : 'Withdraw Research Submission';
+        var title = cfg.modalTitle || (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle) || 'Withdraw Research Submission';
+        var modalUrl = cfg.modalUrl || window.withdrawModalUrl;
 
         if ($.pkp && $.pkp.controllers && $.pkp.controllers.modal && $.pkp.controllers.modal.AjaxModalHandler) {
             var $modal = $('<div id="' + modalId + '" class="pkp_modal pkpModal"></div>');
             $('body').append($modal);
             $modal.pkpHandler('$.pkp.controllers.modal.AjaxModalHandler', {
                 title: title,
-                url: window.withdrawModalUrl,
+                url: modalUrl,
                 canClose: true
             });
         } else {
             // Fallback modal container
-            $.get(window.withdrawModalUrl, function(response) {
+            $.get(modalUrl, function(response) {
                 if (response && response.status === true && response.content) {
                     var $dialog = $(
                         '<div id="' + modalId + '" class="withdraw_native_modal_overlay">' +
@@ -124,8 +132,9 @@
             return;
         }
 
-        var reason = window.submissionWithdrawalReason || '';
-        var date = window.submissionWithdrawalDate || '';
+        var cfg = getCfg();
+        var reason = cfg.reason || window.submissionWithdrawalReason || '';
+        var date = cfg.date || window.submissionWithdrawalDate || '';
         var bannerText = 'This research was withdrawn by the author' + (date ? ' on ' + date : '') + (reason ? '. Reason: ' + reason : '');
 
         var banner = $(
@@ -175,7 +184,7 @@
         initAuthorWithdrawalUI();
     });
 
-    // Check periodically for Vue-rendered workflow header
+    // Observer loop for Vue components mounting
     var attempts = 0;
     var checkInterval = setInterval(function() {
         attempts++;
@@ -183,13 +192,11 @@
             clearInterval(checkInterval);
             return;
         }
-        if (window.canWithdrawSubmission && window.withdrawModalUrl) {
-            initAuthorWithdrawalUI();
-        }
+        initAuthorWithdrawalUI();
         if (attempts > 30) {
             clearInterval(checkInterval);
         }
-    }, 400);
+    }, 350);
 
     $(document).ajaxComplete(function() {
         if ($('#btnAuthorWithdrawResearch').length === 0) {

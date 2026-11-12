@@ -178,21 +178,13 @@ class WithdrawResearchPlugin extends GenericPlugin
         }
 
         // Add custom CSS and JS
-        $templateMgr->addStyleSheet(
-            'withdrawResearchPluginCss',
-            $request->getBaseUrl() . '/' . $this->getPluginPath() . '/css/withdrawResearch.css',
-            ['contexts' => ['backend', 'frontend']]
-        );
+        $baseUrl = $request->getBaseUrl() . '/' . $this->getPluginPath();
+        $templateMgr->addStyleSheet('withdrawResearchPluginCss', $baseUrl . '/css/withdrawResearch.css');
+        $templateMgr->addJavaScript('withdrawResearchPluginJs', $baseUrl . '/js/withdrawResearch.js');
 
-        $templateMgr->addJavaScript(
-            'withdrawResearchPluginJs',
-            $request->getBaseUrl() . '/' . $this->getPluginPath() . '/js/withdrawResearch.js',
-            ['contexts' => ['backend', 'frontend']]
-        );
-
-        // Detect submission object from template variables or query parameters
-        $submission = $templateMgr->getTemplateVars('submission');
+        // Extract submission ID from template or request URL/params
         $submissionId = 0;
+        $submission = $templateMgr->getTemplateVars('submission');
 
         if ($submission && method_exists($submission, 'getId')) {
             $submissionId = (int) $submission->getId();
@@ -200,18 +192,29 @@ class WithdrawResearchPlugin extends GenericPlugin
             $submissionId = (int) $request->getUserVar('submissionId');
             $submission = Repo::submission()->get($submissionId);
         } else {
-            // Check router args for workflow / submission ID: /workflow/index/{submissionId}
-            $router = $request->getRouter();
-            if ($router) {
-                $requestedArgs = $request->getRequestedArgs();
-                if (!empty($requestedArgs) && is_numeric($requestedArgs[0])) {
-                    $submissionId = (int) $requestedArgs[0];
+            // Check requested args /workflow/index/{id} or /authorDashboard/submission/{id}
+            $requestedArgs = (array) $request->getRequestedArgs();
+            foreach ($requestedArgs as $arg) {
+                if (is_numeric($arg) && (int) $arg > 0) {
+                    $submissionId = (int) $arg;
                     $submission = Repo::submission()->get($submissionId);
+                    break;
                 }
             }
         }
 
-        if ($submission && $submissionId > 0) {
+        $canWithdraw = false;
+        $isWithdrawn = false;
+        $withdrawalReason = '';
+        $withdrawalDate = '';
+        $modalUrl = '';
+        $submitUrl = '';
+
+        if ($submissionId > 0) {
+            if (!$submission) {
+                $submission = Repo::submission()->get($submissionId);
+            }
+
             [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, (int) $user->getId(), $contextId);
 
             $modalUrl = $request->getDispatcher()->url(
@@ -232,79 +235,44 @@ class WithdrawResearchPlugin extends GenericPlugin
                 'submitWithdrawal'
             );
 
-            $isWithdrawn = (bool) $submission->getData('withdrawal:isWithdrawn');
-            $withdrawalReason = (string) $submission->getData('withdrawal:reasonLabel');
-            $withdrawalDate = (string) $submission->getData('withdrawal:dateWithdrawn');
-
-            $templateMgr->assign([
-                'canWithdrawSubmission' => $canWithdraw,
-                'withdrawModalUrl' => $modalUrl,
-                'withdrawSubmitUrl' => $submitUrl,
-                'withdrawSubmissionId' => $submissionId,
-                'isSubmissionWithdrawn' => $isWithdrawn,
-                'submissionWithdrawalReason' => $withdrawalReason,
-                'submissionWithdrawalDate' => $withdrawalDate,
-            ]);
-
-            // Embed configuration directly in the page HTML
-            $jsVars = sprintf(
-                '<script type="text/javascript">
-                    window.canWithdrawSubmission = %s;
-                    window.withdrawModalUrl = %s;
-                    window.withdrawSubmitUrl = %s;
-                    window.withdrawSubmissionId = %d;
-                    window.isSubmissionWithdrawn = %s;
-                    window.submissionWithdrawalReason = %s;
-                    window.submissionWithdrawalDate = %s;
-                    window.pkpWithdrawLocales = {
-                        btnText: %s,
-                        modalTitle: %s
-                    };
-                </script>',
-                $canWithdraw ? 'true' : 'false',
-                json_encode($modalUrl),
-                json_encode($submitUrl),
-                $submissionId,
-                $isWithdrawn ? 'true' : 'false',
-                json_encode($withdrawalReason),
-                json_encode($withdrawalDate),
-                json_encode(__('plugins.generic.withdrawResearchPlugin.author.button')),
-                json_encode(__('plugins.generic.withdrawResearchPlugin.author.modalTitle'))
-            );
-
-            $templateMgr->addHeader('withdrawResearchPluginVars', $jsVars, ['contexts' => ['backend', 'frontend']]);
+            if ($submission) {
+                $isWithdrawn = (bool) $submission->getData('withdrawal:isWithdrawn');
+                $withdrawalReason = (string) $submission->getData('withdrawal:reasonLabel');
+                $withdrawalDate = (string) $submission->getData('withdrawal:dateWithdrawn');
+            }
         }
+
+        // Pass global configuration object
+        $clientConfig = [
+            'submissionId' => $submissionId,
+            'canWithdraw' => $canWithdraw,
+            'isWithdrawn' => $isWithdrawn,
+            'reason' => $withdrawalReason,
+            'date' => $withdrawalDate,
+            'modalUrl' => $modalUrl,
+            'submitUrl' => $submitUrl,
+            'btnText' => __('plugins.generic.withdrawResearchPlugin.author.button'),
+            'modalTitle' => __('plugins.generic.withdrawResearchPlugin.author.modalTitle'),
+            'debug' => true,
+        ];
+
+        $scriptTag = '<script type="text/javascript">
+            window.withdrawResearchPluginConfig = ' . json_encode($clientConfig) . ';
+            window.canWithdrawSubmission = ' . ($canWithdraw ? 'true' : 'false') . ';
+            window.withdrawModalUrl = ' . json_encode($modalUrl) . ';
+            window.withdrawSubmitUrl = ' . json_encode($submitUrl) . ';
+            window.withdrawSubmissionId = ' . $submissionId . ';
+            window.isSubmissionWithdrawn = ' . ($isWithdrawn ? 'true' : 'false') . ';
+            window.submissionWithdrawalReason = ' . json_encode($withdrawalReason) . ';
+            window.submissionWithdrawalDate = ' . json_encode($withdrawalDate) . ';
+            window.pkpWithdrawLocales = {
+                btnText: ' . json_encode(__('plugins.generic.withdrawResearchPlugin.author.button')) . ',
+                modalTitle: ' . json_encode(__('plugins.generic.withdrawResearchPlugin.author.modalTitle')) . '
+            };
+        </script>';
+
+        $templateMgr->addHeader('withdrawResearchPluginVars', $scriptTag);
 
         return false;
-    }
-
-    /**
-     * @copydoc Plugin::getSetting()
-     *
-     * Provides intelligent defaults for unset plugin configuration options
-     */
-    public function getSetting($contextId, $name, $default = null)
-    {
-        $val = parent::getSetting($contextId, $name);
-        if ($val === null) {
-            $defaults = [
-                'enabled' => true,
-                'requireReason' => true,
-                'notifyEditors' => true,
-                'notifyAuthor' => true,
-                'withdrawalPolicy' => '',
-                'allowedStages' => [1, 3, 4, 5], // Submission, External Review, Editorial, Production
-            ];
-
-            if ($default !== null) {
-                return $default;
-            }
-
-            if (array_key_exists($name, $defaults)) {
-                return $defaults[$name];
-            }
-        }
-
-        return $val;
     }
 }

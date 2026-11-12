@@ -1,0 +1,208 @@
+/**
+ * Styles for Author Research Withdrawal Plugin
+ */
+
+.withdraw_action_btn {
+    background-color: #d9534f !important;
+    border-color: #d43f3a !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.withdraw_action_btn:hover,
+.withdraw_action_btn:focus {
+    background-color: #c9302c !important;
+    border-color: #ac2925 !important;
+    color: #fff !important;
+}
+
+.withdraw_alert_banner {
+    display: flex;
+    align-items: flex-start;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.withdraw_alert_warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+}
+
+.withdraw_alert_banner .fa {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.withdraw_policy_box {
+    background: #f8f9fa;
+    border-left: 4px solid #006798;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    border-radius: 0 4px 4px 0;
+}
+
+.withdraw_policy_box h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.withdraw_policy_text {
+    font-size: 13px;
+    color: #475569;
+}
+
+.withdraw_submission_summary {
+    background: #edf2f7;
+    padding: 10px 14px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+    font-size: 13px;
+}
+
+.withdraw_label {
+    font-weight: 600;
+    color: #4a5568;
+    margin-right: 6px;
+}
+
+.withdraw_val {
+    font-weight: 500;
+    color: #1a202c;
+}
+
+.withdraw_form_group {
+    margin-bottom: 16px;
+}
+
+.withdraw_field_label {
+    display: block;
+    font-weight: 600;
+    font-size: 13px;
+    margin-bottom: 6px;
+    color: #2d3748;
+}
+
+.withdraw_field_label .req {
+    color: #e53e3e;
+    margin-left: 3px;
+}
+
+.pkp_author_withdraw_modal select.pkp_select,
+.pkp_author_withdraw_modal textarea.pkp_textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e0;
+    border-radius: 4px;
+    font-size: 14px;
+    background-color: #fff;
+}
+
+.pkp_author_withdraw_modal select.pkp_select:focus,
+.pkp_author_withdraw_modal textarea.pkp_textarea:focus {
+    border-color: #3182ce;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
+}
+
+.withdraw_confirm_group {
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    padding: 12px 14px;
+    border-radius: 4px;
+}
+
+.withdraw_checkbox_label {
+    display: flex;
+    align-items: flex-start;
+    font-size: 13px;
+    color: #9b2c2c;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.withdraw_checkbox_label input[type="checkbox"] {
+    margin-top: 3px;
+    margin-right: 10px;
+}
+
+.withdraw_modal_footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 14px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.withdraw_btn_confirm {
+    background-color: #e53e3e !important;
+    border-color: #c53030 !important;
+    color: #fff !important;
+}
+
+.withdraw_btn_confirm:hover {
+    background-color: #c53030 !important;
+}
+
+.withdraw_withdrawn_status_banner {
+    background: #fed7d7;
+    border-left: 4px solid #e53e3e;
+    color: #9b2c2c;
+    padding: 12px 16px;
+    margin: 12px 0 20px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 14px;
+}
+
+/* Fallback native modal overlay */
+.withdraw_native_modal_overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.withdraw_native_modal_dialog {
+    background: #fff;
+    width: 90%;
+    max-width: 650px;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    padding: 24px;
+    position: relative;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.withdraw_modal_close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #718096;
+}
+
+.withdraw_modal_close:hover {
+    color: #1a202c;
+}

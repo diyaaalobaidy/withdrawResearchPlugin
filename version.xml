@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE version SYSTEM "../../../lib/pkp/dtd/pluginVersion.dtd">
+<!--
+  * plugins/generic/withdrawResearchPlugin/version.xml
+  *
+  * Copyright (c) 2026
+  * Distributed under the GNU GPL v3.
+  *
+  * Plugin version information for Author Research Withdrawal Plugin (OJS 3.5).
+  -->
+<version>
+	<application>withdrawResearchPlugin</application>
+	<type>plugins.generic</type>
+	<release>1.0.0.0</release>
+	<date>2026-11-12</date>
+	<lazy-load>0</lazy-load>
+	<sitewide>0</sitewide>
+	<class>APP\plugins\generic\withdrawResearchPlugin\WithdrawResearchPlugin</class>
+</version>

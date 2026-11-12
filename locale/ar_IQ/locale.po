@@ -1,0 +1,143 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: withdrawResearchPlugin\n"
+"POT-Creation-Date: 2026-11-12 12:00+0000\n"
+"PO-Revision-Date: 2026-11-12 12:00+0000\n"
+"Last-Translator: Antigravity\n"
+"Language-Team: Arabic <ar@li.org>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "plugins.generic.withdrawResearchPlugin.displayName"
+msgstr "إضافة سحب البحث من قبل المؤلف"
+
+msgid "plugins.generic.withdrawResearchPlugin.description"
+msgstr "تمكّن المؤلفين من طلب أو تنفيذ سحب أبحاثهم ومقالاتهم من مسار التحكيم والتحرير في المجلة."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.title"
+msgstr "إعدادات سحب البحث للمؤلف"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.enabled"
+msgstr "تفعيل ميزة سحب البحث للمؤلفين"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.requireReason"
+msgstr "إلزام المؤلف ببيان سبب السحب"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.requireReasonDescription"
+msgstr "عند التفعيل، يتوجب على المؤلف اختيار سبب أو كتابة توضيح لسحب البحث."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.notifyEditors"
+msgstr "إرسال إشعار للمحررين المعنيين وجهة اتصال المجلة"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.notifyAuthor"
+msgstr "إرسال رسالة تأكيد بالبريد الإلكتروني للمؤلف"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.withdrawalPolicy"
+msgstr "سياسة / شروط سحب البحث في المجلة"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.withdrawalPolicyDescription"
+msgstr "تظهر للمؤلف في نافذة السحب قبل تأكيد الطلب."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.allowedStages"
+msgstr "المراحل التحريرية المسموح فيها بسحب البحث"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.save"
+msgstr "حفظ الإعدادات"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.button"
+msgstr "سحب البحث"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.modalTitle"
+msgstr "سحب البحث من المجلة"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.warning"
+msgstr "تحذير: يؤدي سحب البحث إلى إيقاف كافة إجراءات التحرير والتحكيم للمخطوطة فوراً. لا يمكن إعادة فتح البحث المسحوب تلقائياً."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.reasonLabel"
+msgstr "سبب سحب البحث"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.selectReason"
+msgstr "اختر سبباً..."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.noteLabel"
+msgstr "ملاحظات إضافية / توضيح (اختياري)"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.confirmCheck"
+msgstr "أؤكد أنني مخول بالنيابة عن جميع المؤلفين المشاركين لسحب هذا البحث من المجلة."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.confirmButton"
+msgstr "تأكيد السحب"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.cancelButton"
+msgstr "إلغاء"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.duplicateSubmission"
+msgstr "تقديم مكرر عن طريق الخطأ"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.seriousErrors"
+msgstr "اكتشاف أخطاء جوهرية في البيانات أو النتائج تتطلب إعادة حسابات موسعة"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.authorshipDispute"
+msgstr "خلاف حول التأليف أو الملكية الفكرية"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.publishingElsewhere"
+msgstr "قرار النشر في منصة أو مؤتمر آخر"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.institutionalRequest"
+msgstr "طلب مؤسسي أو متعلق بجهة التمويل أو براءة اختراع"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.delayInReview"
+msgstr "تأخر كبير في فترة التحكيم والتقييم"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.other"
+msgstr "سبب آخر (يرجى التوضيح أدناه)"
+
+msgid "plugins.generic.withdrawResearchPlugin.withdrawSuccess"
+msgstr "تم سحب بحثكم بنجاح وتم إشعار هيئة التحرير بذلك."
+
+msgid "plugins.generic.withdrawResearchPlugin.status.withdrawnBadge"
+msgstr "مسحوب من قبل المؤلف"
+
+msgid "plugins.generic.withdrawResearchPlugin.status.withdrawnNotice"
+msgstr "تم سحب هذا التقديم من قبل المؤلف بتاريخ {$date}. السبب: {$reason}."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.pluginDisabled"
+msgstr "خاصية سحب الأبحاث غير مفعلة حالياً في هذه المجلة."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.submissionNotFound"
+msgstr "تعذر العثور على التقديم المطلوب."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.alreadyDeclined"
+msgstr "هذا التقديم مرفوض أو مسحوب بالفعل مسبقاً."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.alreadyPublished"
+msgstr "لا يمكن سحب الأبحاث المنشورة عبر هذه الأداة. يرجى التواصل مباشرة مع إدارة التحرير بخصوص التراجع بعد النشر."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.stageNotAllowed"
+msgstr "غير مسموح بسحب البحث في هذه المرحلة التحريرية."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.notAuthor"
+msgstr "يحق للمؤلفين المعينين أو صاحب التقديم فقط سحب هذا البحث."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.confirmRequired"
+msgstr "يجب تأكيد الموافقة على السحب بتحديد خانة الإقرار."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.reasonRequired"
+msgstr "يرجى تحديد أو كتابة سبب سحب البحث."
+
+msgid "plugins.generic.withdrawResearchPlugin.email.editorSubject"
+msgstr "[{$journalName}] سحب بحث من قبل المؤلف: رقم التقديم {$submissionId}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.editorBody"
+msgstr "السادة أعضاء هيئة التحرير،\n\nقام المؤلف ({$authorName}، {$authorEmail}) بسحب بحثه رسمياً من {$journalName}.\n\nرقم التقديم: {$submissionId}\nعنوان البحث: {$submissionTitle}\nالسبب: {$reason}\nالملاحظات والتوضيح: {$notes}\nتاريخ السحب: {$date}\n\nتم تحديث حالة التقديم تلقائياً إلى مرفوض/مسحوب.\n\nمع التحية،\n{$journalName}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.authorSubject"
+msgstr "[{$journalName}] تأكيد سحب البحث: رقم التقديم {$submissionId}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.authorBody"
+msgstr "الأستاذ/ة {$authorName}،\n\nنؤكد لكم أنه تم سحب بحثكم رسمياً من مجلة {$journalName}.\n\nرقم التقديم: {$submissionId}\nعنوان البحث: {$submissionTitle}\nالسبب: {$reason}\nالملاحظات: {$notes}\nالتاريخ: {$date}\n\nلن يتم اتخاذ أي إجراءات تحريرية أو تحكيمية إضافية لهذه المخطوطة.\n\nمع خالص التقدير،\nمكتب التحرير\n{$journalName}"
+
+msgid "plugins.generic.withdrawResearchPlugin.log.entry"
+msgstr "تم سحب البحث من قبل المؤلف {$authorName} ({$authorEmail}). السبب: {$reason}. ملاحظة: {$note} بتاريخ {$date}."

@@ -1,0 +1,143 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: withdrawResearchPlugin\n"
+"POT-Creation-Date: 2026-11-12 12:00+0000\n"
+"PO-Revision-Date: 2026-11-12 12:00+0000\n"
+"Last-Translator: Antigravity\n"
+"Language-Team: English <en@li.org>\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "plugins.generic.withdrawResearchPlugin.displayName"
+msgstr "Author Research Withdrawal Plugin"
+
+msgid "plugins.generic.withdrawResearchPlugin.description"
+msgstr "Enables authors to request or perform withdrawal of their research manuscripts from the journal editorial workflow."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.title"
+msgstr "Author Research Withdrawal Settings"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.enabled"
+msgstr "Enable Research Withdrawal for Authors"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.requireReason"
+msgstr "Require Author to Specify Reason"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.requireReasonDescription"
+msgstr "When enabled, authors must select or state a reason for withdrawing their research."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.notifyEditors"
+msgstr "Notify Assigned Editors & Journal Contact"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.notifyAuthor"
+msgstr "Send Confirmation Email to Author"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.withdrawalPolicy"
+msgstr "Journal Withdrawal Policy / Notice"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.withdrawalPolicyDescription"
+msgstr "Displayed to authors in the withdrawal modal dialog prior to confirmation."
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.allowedStages"
+msgstr "Stages Where Withdrawal is Permitted"
+
+msgid "plugins.generic.withdrawResearchPlugin.settings.save"
+msgstr "Save Settings"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.button"
+msgstr "Withdraw Research"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.modalTitle"
+msgstr "Withdraw Research Submission"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.warning"
+msgstr "Warning: Withdrawing your manuscript halts all editorial handling and peer review. Once withdrawn, this submission cannot be automatically reopened."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.reasonLabel"
+msgstr "Reason for Withdrawal"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.selectReason"
+msgstr "Select a reason..."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.noteLabel"
+msgstr "Additional Comments / Explanation (Optional)"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.confirmCheck"
+msgstr "I confirm that I am authorized on behalf of all co-authors to withdraw this manuscript from this journal."
+
+msgid "plugins.generic.withdrawResearchPlugin.author.confirmButton"
+msgstr "Confirm Withdrawal"
+
+msgid "plugins.generic.withdrawResearchPlugin.author.cancelButton"
+msgstr "Cancel"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.duplicateSubmission"
+msgstr "Accidental duplicate submission"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.seriousErrors"
+msgstr "Errors or flaw identified in data/findings requiring major recalculation"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.authorshipDispute"
+msgstr "Authorship or intellectual property dispute"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.publishingElsewhere"
+msgstr "Decision to publish in an alternate venue / conference"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.institutionalRequest"
+msgstr "Institutional, funding agency, or patent embargo requirement"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.delayInReview"
+msgstr "Substantial delay in review process"
+
+msgid "plugins.generic.withdrawResearchPlugin.reason.other"
+msgstr "Other (please explain below)"
+
+msgid "plugins.generic.withdrawResearchPlugin.withdrawSuccess"
+msgstr "Your research submission has been successfully withdrawn. The editorial team has been notified."
+
+msgid "plugins.generic.withdrawResearchPlugin.status.withdrawnBadge"
+msgstr "Withdrawn by Author"
+
+msgid "plugins.generic.withdrawResearchPlugin.status.withdrawnNotice"
+msgstr "This submission was withdrawn by the author on {$date}. Reason: {$reason}."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.pluginDisabled"
+msgstr "Research withdrawal is currently not enabled by the journal."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.submissionNotFound"
+msgstr "The requested submission could not be found."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.alreadyDeclined"
+msgstr "This submission has already been declined or withdrawn."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.alreadyPublished"
+msgstr "Published articles cannot be withdrawn through this tool. Please contact the journal editor regarding post-publication retractions or errata."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.stageNotAllowed"
+msgstr "Withdrawals are not permitted at the current workflow stage."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.notAuthor"
+msgstr "Only assigned authors or the manuscript submitter can withdraw this research."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.confirmRequired"
+msgstr "You must check the confirmation box indicating consent to withdraw."
+
+msgid "plugins.generic.withdrawResearchPlugin.error.reasonRequired"
+msgstr "Please select or provide a reason for the withdrawal."
+
+msgid "plugins.generic.withdrawResearchPlugin.email.editorSubject"
+msgstr "[{$journalName}] Research Withdrawn by Author: ID {$submissionId}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.editorBody"
+msgstr "Dear Editorial Team,\n\nThe author ({$authorName}, {$authorEmail}) has formally withdrawn their research submission from {$journalName}.\n\nSubmission ID: {$submissionId}\nTitle: {$submissionTitle}\nReason: {$reason}\nNotes / Explanation: {$notes}\nDate of Withdrawal: {$date}\n\nThe submission status has been updated accordingly to declined/withdrawn.\n\nBest regards,\n{$journalName}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.authorSubject"
+msgstr "[{$journalName}] Confirmation of Research Withdrawal: ID {$submissionId}"
+
+msgid "plugins.generic.withdrawResearchPlugin.email.authorBody"
+msgstr "Dear {$authorName},\n\nThis email confirms that your research submission has been successfully withdrawn from {$journalName}.\n\nSubmission ID: {$submissionId}\nTitle: {$submissionTitle}\nReason: {$reason}\nNotes: {$notes}\nDate: {$date}\n\nNo further editorial processing or peer review will take place for this manuscript.\n\nSincerely,\nEditorial Office\n{$journalName}"
+
+msgid "plugins.generic.withdrawResearchPlugin.log.entry"
+msgstr "Research withdrawn by author {$authorName} ({$authorEmail}). Reason: {$reason}. Note: {$note} on {$date}."

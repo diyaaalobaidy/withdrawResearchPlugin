@@ -49,10 +49,10 @@ class WithdrawResearchPlugin extends GenericPlugin
     {
         $success = parent::register($category, $path, $mainContextId);
         if ($success) {
-            // Register page handler hook for authorWithdraw endpoints
+            // Frontend and backend routing hook
             Hook::add('LoadHandler', [$this, 'callbackLoadHandler']);
 
-            // Register TemplateManager hook for injecting assets and UI variables (supported in OJS 3.5)
+            // Asset and variables injection hook
             Hook::add('TemplateManager::display', [$this, 'callbackTemplateDisplay']);
         }
         return $success;
@@ -91,7 +91,7 @@ class WithdrawResearchPlugin extends GenericPlugin
     }
 
     /**
-     * Add settings link to the plugin entry in the Plugins list
+     * Provide management action links in the plugin list.
      */
     public function getActions($request, $actionArgs): array
     {
@@ -168,12 +168,9 @@ class WithdrawResearchPlugin extends GenericPlugin
         }
 
         $contextId = (int) $context->getId();
-        if (!$this->getEnabled($contextId)) {
-            return false;
-        }
 
-        $user = $request->getUser();
-        if (!$user) {
+        // Check if plugin is enabled in the journal
+        if (!$this->getEnabled($contextId)) {
             return false;
         }
 
@@ -182,7 +179,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         $templateMgr->addStyleSheet('withdrawResearchPluginCss', $baseUrl . '/css/withdrawResearch.css');
         $templateMgr->addJavaScript('withdrawResearchPluginJs', $baseUrl . '/js/withdrawResearch.js');
 
-        // Extract submission ID from template, request, or URI path
+        // Extract submission ID from template variables, request, or URL args
         $submissionId = 0;
         $submission = $templateMgr->getTemplateVars('submission');
 
@@ -192,7 +189,6 @@ class WithdrawResearchPlugin extends GenericPlugin
             $submissionId = (int) $request->getUserVar('submissionId');
             $submission = Repo::submission()->get($submissionId);
         } else {
-            // Check requested args /workflow/index/{id} or /authorDashboard/submission/{id}
             $requestedArgs = (array) $request->getRequestedArgs();
             foreach ($requestedArgs as $arg) {
                 if (is_numeric($arg) && (int) $arg > 0) {
@@ -202,7 +198,6 @@ class WithdrawResearchPlugin extends GenericPlugin
                 }
             }
 
-            // Fallback: parse submission ID from request path URI
             if ($submissionId === 0) {
                 $uri = (string) $request->getRequestPath();
                 if (preg_match('#/(?:workflow|authorDashboard)/(?:index|submission)/(\d+)#', $uri, $matches)) {
@@ -212,6 +207,9 @@ class WithdrawResearchPlugin extends GenericPlugin
             }
         }
 
+        $user = $request->getUser();
+        $userId = $user ? (int) $user->getId() : 0;
+
         $canWithdraw = false;
         $isWithdrawn = false;
         $withdrawalReason = '';
@@ -219,12 +217,12 @@ class WithdrawResearchPlugin extends GenericPlugin
         $modalUrl = '';
         $submitUrl = '';
 
-        if ($submissionId > 0) {
+        if ($submissionId > 0 && $userId > 0) {
             if (!$submission) {
                 $submission = Repo::submission()->get($submissionId);
             }
 
-            [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, (int) $user->getId(), $contextId);
+            [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, $userId, $contextId);
 
             $modalUrl = $request->getDispatcher()->url(
                 $request,
@@ -251,7 +249,6 @@ class WithdrawResearchPlugin extends GenericPlugin
             }
         }
 
-        // Pass global configuration object
         $clientConfig = [
             'submissionId' => $submissionId,
             'canWithdraw' => $canWithdraw,

@@ -1,5 +1,5 @@
 /**
- * Author Research Withdrawal Plugin - Frontend script
+ * Author Research Withdrawal Plugin - Frontend script for OJS 3.5
  *
  * Handles client-side button injection into submission workflow,
  * status badge rendering, and AJAX modal submission.
@@ -7,17 +7,6 @@
 
 (function($) {
     'use strict';
-
-    $(document).ready(function() {
-        initAuthorWithdrawalUI();
-    });
-
-    // Also run on dynamic Vue / Ajax changes
-    $(document).ajaxComplete(function() {
-        if ($('#btnAuthorWithdrawResearch').length === 0 && $('#btnAuthorWithdrawDirect').length === 0) {
-            initAuthorWithdrawalUI();
-        }
-    });
 
     function initAuthorWithdrawalUI() {
         // If submission is already withdrawn, display banner
@@ -47,9 +36,9 @@
             : 'Withdraw Research';
 
         var btnHtml = $(
-            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border-color: #b91c1c !important; color: #fff !important; font-weight: 600; margin-right: 8px;">' +
-            '<span class="fa fa-ban" aria-hidden="true" style="margin-right: 5px;"></span>' +
-            btnText +
+            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border: 1px solid #b91c1c !important; color: #fff !important; font-weight: 600; margin: 0 8px; padding: 6px 14px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; z-index: 999;">' +
+            '<span class="fa fa-ban" aria-hidden="true"></span>' +
+            '<span>' + btnText + '</span>' +
             '</button>'
         );
 
@@ -58,24 +47,21 @@
             openWithdrawModal();
         });
 
-        // Search for primary targets in OJS 3.5 Vue workflow
-        var $actionsTarget = $('.pkpWorkflow__header .pkpHeader__actions, .pkpHeader__actions, .stage_actions').first();
+        // Target locations in OJS 3.5 Vue workflow
+        var $actionsTarget = $(
+            '.pkpWorkflow__header .pkpHeader__actions, ' +
+            '.pkpHeader__actions, ' +
+            '.app__pageActions, ' +
+            '.stage_actions'
+        ).first();
 
         if ($actionsTarget.length) {
             $actionsTarget.prepend(btnHtml);
         } else {
-            // Secondary target: insertion right after submission identification / title
-            var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
+            var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading, .pkpWorkflow').first();
             if ($idTarget.length) {
-                var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="margin: 12px 0;"></div>').append(btnHtml);
+                var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="margin: 10px 0;"></div>').append(btnHtml);
                 $idTarget.after($wrapper);
-            } else {
-                // Fallback: prepend to workflow container
-                var $fallback = $('#workflow, .pkpWorkflow, .pkp_submission_workflow').first();
-                if ($fallback.length) {
-                    var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="margin: 12px 0;"></div>').append(btnHtml);
-                    $fallback.prepend($wrapper2);
-                }
             }
         }
     }
@@ -172,6 +158,31 @@
                 $btn.prop('disabled', false).removeClass('pkp_button_disabled');
             }
         });
+    });
+
+    $(document).ready(function() {
+        initAuthorWithdrawalUI();
+    });
+
+    // Check periodically for Vue-rendered workflow header
+    var checkInterval = setInterval(function() {
+        if ($('#btnAuthorWithdrawResearch').length > 0 || window.isSubmissionWithdrawn) {
+            clearInterval(checkInterval);
+            return;
+        }
+        if (window.canWithdrawSubmission && window.withdrawModalUrl) {
+            initAuthorWithdrawalUI();
+        }
+    }, 500);
+
+    setTimeout(function() {
+        clearInterval(checkInterval);
+    }, 10000);
+
+    $(document).ajaxComplete(function() {
+        if ($('#btnAuthorWithdrawResearch').length === 0) {
+            initAuthorWithdrawalUI();
+        }
     });
 
 })(jQuery);

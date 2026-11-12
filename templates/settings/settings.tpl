@@ -119,7 +119,6 @@
             $form.on('submit', function(e) {
                 e.preventDefault();
                 var form = this;
-                var formData = new FormData(form);
                 var $btn = $form.find('button[type="submit"]');
                 var origText = $btn.text();
                 $btn.prop('disabled', true).text('Saving...');
@@ -127,14 +126,15 @@
                 $.ajax({
                     url: form.action,
                     type: 'POST',
-                    data: formData,
-                    processData: false,
-                    contentType: false,
+                    data: $form.serialize(),
+                    dataType: 'json',
                     success: function(response) {
                         $btn.prop('disabled', false).text(origText);
                         if (response && response.status === true) {
                             if (window.pkp && pkp.eventBus) {
                                 pkp.eventBus.$emit('notify', '{translate key="common.saved"}', 'success');
+                            } else {
+                                alert('{translate key="common.saved"}');
                             }
                             var modal = $form.closest('.ui-dialog-content');
                             if (modal.length) {

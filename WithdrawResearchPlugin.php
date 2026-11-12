@@ -172,6 +172,11 @@ class WithdrawResearchPlugin extends GenericPlugin
             return false;
         }
 
+        // Check if author withdrawal feature is enabled in plugin settings
+        if (!(bool) $this->getSetting($contextId, 'enabled')) {
+            return false;
+        }
+
         $user = $request->getUser();
         if (!$user) {
             return false;
@@ -213,17 +218,21 @@ class WithdrawResearchPlugin extends GenericPlugin
                 'submitWithdrawal'
             );
 
+            $isWithdrawn = (bool) $submission->getData('withdrawal:isWithdrawn');
+            $withdrawalReason = (string) $submission->getData('withdrawal:reasonLabel');
+            $withdrawalDate = (string) $submission->getData('withdrawal:dateWithdrawn');
+
             $templateMgr->assign([
                 'canWithdrawSubmission' => $canWithdraw,
                 'withdrawModalUrl' => $modalUrl,
                 'withdrawSubmitUrl' => $submitUrl,
                 'withdrawSubmissionId' => $submissionId,
-                'isSubmissionWithdrawn' => (bool) $submission->getData('withdrawal:isWithdrawn'),
-                'submissionWithdrawalReason' => (string) $submission->getData('withdrawal:reasonLabel'),
-                'submissionWithdrawalDate' => (string) $submission->getData('withdrawal:dateWithdrawn'),
+                'isSubmissionWithdrawn' => $isWithdrawn,
+                'submissionWithdrawalReason' => $withdrawalReason,
+                'submissionWithdrawalDate' => $withdrawalDate,
             ]);
 
-            // Expose configuration directly to the frontend window object
+            // Expose configuration directly to the backend HTML head
             $jsVars = sprintf(
                 '<script type="text/javascript">
                     window.canWithdrawSubmission = %s;
@@ -242,14 +251,14 @@ class WithdrawResearchPlugin extends GenericPlugin
                 json_encode($modalUrl),
                 json_encode($submitUrl),
                 $submissionId,
-                $submission->getData('withdrawal:isWithdrawn') ? 'true' : 'false',
-                json_encode((string) $submission->getData('withdrawal:reasonLabel')),
-                json_encode((string) $submission->getData('withdrawal:dateWithdrawn')),
+                $isWithdrawn ? 'true' : 'false',
+                json_encode($withdrawalReason),
+                json_encode($withdrawalDate),
                 json_encode(__('plugins.generic.withdrawResearchPlugin.author.button')),
                 json_encode(__('plugins.generic.withdrawResearchPlugin.author.modalTitle'))
             );
 
-            $templateMgr->addHeader('withdrawResearchPluginVars', $jsVars);
+            $templateMgr->addHeader('withdrawResearchPluginVars', $jsVars, ['contexts' => ['backend']]);
         }
 
         return false;
@@ -265,7 +274,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         $val = parent::getSetting($contextId, $name);
         if ($val === null) {
             $defaults = [
-                'enabled' => false,
+                'enabled' => true,
                 'requireReason' => true,
                 'notifyEditors' => true,
                 'notifyAuthor' => true,

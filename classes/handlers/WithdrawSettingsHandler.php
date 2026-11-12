@@ -60,19 +60,14 @@ class WithdrawSettingsHandler extends Handler
 
         $allowedStages = (array) $this->plugin->getSetting($contextId, 'allowedStages');
         if (empty($allowedStages)) {
-            $allowedStages = [
-                WORKFLOW_STAGE_ID_SUBMISSION,
-                WORKFLOW_STAGE_ID_EXTERNAL_REVIEW,
-                WORKFLOW_STAGE_ID_EDITING,
-                WORKFLOW_STAGE_ID_PRODUCTION,
-            ];
+            $allowedStages = [1, 3, 4, 5];
         }
 
         $stagesList = [
-            WORKFLOW_STAGE_ID_SUBMISSION => __('submission.submission'),
-            WORKFLOW_STAGE_ID_EXTERNAL_REVIEW => __('workflow.review.externalReview'),
-            WORKFLOW_STAGE_ID_EDITING => __('submission.editorial'),
-            WORKFLOW_STAGE_ID_PRODUCTION => __('submission.production'),
+            1 => __('submission.submission'),
+            3 => __('workflow.review.externalReview'),
+            4 => __('submission.editorial'),
+            5 => __('submission.production'),
         ];
 
         $templateMgr->assign([
@@ -102,15 +97,16 @@ class WithdrawSettingsHandler extends Handler
         $notifyEditors = (bool) $request->getUserVar('notifyEditors');
         $notifyAuthor = (bool) $request->getUserVar('notifyAuthor');
         $withdrawalPolicy = (string) $request->getUserVar('withdrawalPolicy');
-        $allowedStages = (array) $request->getUserVar('allowedStages');
+        $rawStages = $request->getUserVar('allowedStages');
+        $allowedStages = is_array($rawStages) ? array_map('intval', $rawStages) : [1, 3, 4, 5];
 
         $this->plugin->updateSetting($contextId, 'enabled', $enabled, 'bool');
         $this->plugin->updateSetting($contextId, 'requireReason', $requireReason, 'bool');
         $this->plugin->updateSetting($contextId, 'notifyEditors', $notifyEditors, 'bool');
         $this->plugin->updateSetting($contextId, 'notifyAuthor', $notifyAuthor, 'bool');
         $this->plugin->updateSetting($contextId, 'withdrawalPolicy', $withdrawalPolicy, 'string');
-        $this->plugin->updateSetting($contextId, 'allowedStages', array_map('intval', $allowedStages), 'object');
+        $this->plugin->updateSetting($contextId, 'allowedStages', $allowedStages, 'object');
 
-        return new JSONMessage(true);
+        return new JSONMessage(true, ['saved' => true]);
     }
 }

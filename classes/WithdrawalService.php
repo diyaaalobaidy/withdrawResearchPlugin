@@ -101,7 +101,7 @@ class WithdrawalService
             return [false, 'stage_not_allowed', __('plugins.generic.withdrawResearchPlugin.error.stageNotAllowed')];
         }
 
-        // Authorship / Role check: allows assigned authors, submitter, and managers/admins
+        // Authorship check: strictly authors/submitter ONLY. Editors and managers cannot withdraw on author behalf.
         if (!$this->isUserAuthorOfSubmission($submissionId, $userId)) {
             return [false, 'not_author', __('plugins.generic.withdrawResearchPlugin.error.notAuthor')];
         }
@@ -110,21 +110,17 @@ class WithdrawalService
     }
 
     /**
-     * Determine whether the given user is authorized to withdraw the submission
-     * (assigned author, submitter, or journal manager/admin).
+     * Determine whether the given user is an assigned Author or the Submitter of the submission.
+     * Editors and Managers are excluded unless they are the author of the manuscript.
      */
     public function isUserAuthorOfSubmission(int $submissionId, int $userId): bool
     {
         $user = Repo::user()->get($userId);
-        $request = Application::get()->getRequest();
-        $context = $request ? $request->getContext() : null;
-
-        // Managers and site admins can always test and initiate withdrawal
-        if ($context && $user && ($user->hasRole([Role::ROLE_ID_MANAGER], $context->getId()) || $user->hasRole([Role::ROLE_ID_SITE_ADMIN], 0))) {
-            return true;
+        if (!$user) {
+            return false;
         }
 
-        // 1. Check via StageAssignments
+        // 1. Check via StageAssignments specifically for ROLE_ID_AUTHOR (0x00010000 = 65536)
         try {
             $stageAssignments = Repo::stageAssignment()->getCollector()
                 ->filterBySubmissionIds([$submissionId])
@@ -145,8 +141,8 @@ class WithdrawalService
             return true;
         }
 
-        // 3. Check authors metadata for matching email
-        if ($user && $submission) {
+        // 3. Check authors metadata for matching email of the logged-in user
+        if ($submission) {
             $userEmail = strtolower(trim((string) $user->getEmail()));
             $publication = $submission->getCurrentPublication();
             if ($publication) {
@@ -189,7 +185,6 @@ class WithdrawalService
 
         $submission = Repo::submission()->get($submissionId);
         $stageIdBefore = (int) $submission->getData('stageId');
-        $statusBefore = (int) $submission->getData('status');
 
         $now = date('Y-m-d H:i:s');
         $reasonLabels = $this->getWithdrawalReasons();

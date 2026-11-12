@@ -5,10 +5,12 @@
 (function($) {
     'use strict';
 
-    console.log('[WithdrawResearchPlugin] initialized with config:', window.withdrawResearchPluginConfig);
+    function getCfg() {
+        return window.withdrawResearchPluginConfig || {};
+    }
 
     function getSubmissionId() {
-        var cfg = window.withdrawResearchPluginConfig || {};
+        var cfg = getCfg();
         if (cfg.submissionId && parseInt(cfg.submissionId, 10) > 0) {
             return parseInt(cfg.submissionId, 10);
         }
@@ -28,7 +30,7 @@
     }
 
     function buildModalUrl(subId) {
-        var cfg = window.withdrawResearchPluginConfig || {};
+        var cfg = getCfg();
         if (cfg.modalUrl && cfg.modalUrl.length > 5 && parseInt(cfg.submissionId, 10) === subId) {
             return cfg.modalUrl;
         }
@@ -51,7 +53,8 @@
     }
 
     function createWithdrawButton(subId) {
-        var cfg = window.withdrawResearchPluginConfig || {};
+        var cfg = getCfg();
+        var modalUrl = buildModalUrl(subId);
         var btnText = cfg.btnText || (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText) || 'Withdraw Research';
 
         var $btn = $(
@@ -75,11 +78,7 @@
         return $btn;
     }
 
-    /**
-     * Find the Library button in the upper bar
-     */
     function findLibraryButton() {
-        // Look for buttons with text containing "Library" or "المكتبة" or attributes matching library
         var $candidates = $('button, a.pkpButton').filter(function() {
             var text = ($(this).text() || '').trim().toLowerCase();
             var ref = $(this).attr('ref') || '';
@@ -96,6 +95,14 @@
     }
 
     function injectButton() {
+        // STRICT AUTHOR CHECK: Only show if author permission is true
+        var cfg = getCfg();
+        if (cfg.canWithdraw !== true && window.canWithdrawSubmission !== true) {
+            // If user is an editor / not the author, remove button if present and return
+            $('#btnAuthorWithdrawResearch').remove();
+            return false;
+        }
+
         if ($('#btnAuthorWithdrawResearch').length > 0) {
             return true;
         }
@@ -107,11 +114,10 @@
 
         var $btn = createWithdrawButton(subId);
 
-        // 1. Target: Right beside the Library button
+        // 1. Target: Directly beside the Library button
         var $libraryBtn = findLibraryButton();
         if ($libraryBtn.length) {
             $libraryBtn.before($btn);
-            console.log('[WithdrawResearchPlugin] Injected button directly beside the Library button.');
             return true;
         }
 
@@ -124,7 +130,6 @@
 
         if ($actionsTarget.length) {
             $actionsTarget.prepend($btn);
-            console.log('[WithdrawResearchPlugin] Injected button into .pkpHeader__actions');
             return true;
         }
 
@@ -135,9 +140,6 @@
         var modalId = 'authorWithdrawModalDialog';
         var title = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle) || 'Withdraw Research Submission';
 
-        console.log('[WithdrawResearchPlugin] Opening modal with URL:', url);
-
-        // Fetch modal content via simple AJAX and render accessible modal overlay
         $('#' + modalId).remove();
         $('.withdraw_native_modal_overlay').remove();
 
@@ -209,12 +211,11 @@
         injectButton();
     });
 
-    // Observer loop for Vue rendering of the upper bar
     var count = 0;
     var timer = setInterval(function() {
         count++;
         var success = injectButton();
-        if (success || count > 40) {
+        if (success || count > 35) {
             clearInterval(timer);
         }
     }, 250);

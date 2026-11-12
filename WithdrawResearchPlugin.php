@@ -238,6 +238,8 @@ class WithdrawResearchPlugin extends GenericPlugin
         }
 
         $canWithdraw = false;
+        $reasonCode = 'init';
+        $reasonMessage = '';
         $isWithdrawn = false;
         $withdrawalReason = '';
         $withdrawalDate = '';
@@ -250,7 +252,7 @@ class WithdrawResearchPlugin extends GenericPlugin
             }
 
             if ($submission && $userId > 0) {
-                [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, $userId, $contextId);
+                [$canWithdraw, $reasonCode, $reasonMessage] = $this->getService()->canWithdraw($submissionId, $userId, $contextId);
 
                 $modalUrl = $request->getDispatcher()->url(
                     $request,
@@ -279,6 +281,8 @@ class WithdrawResearchPlugin extends GenericPlugin
         $clientConfig = [
             'submissionId' => $submissionId,
             'canWithdraw' => $canWithdraw,
+            'reasonCode' => $reasonCode,
+            'reasonMessage' => $reasonMessage,
             'isWithdrawn' => $isWithdrawn,
             'reason' => $withdrawalReason,
             'date' => $withdrawalDate,
@@ -319,7 +323,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         $val = parent::getSetting($contextId, $name);
         if ($val === null) {
             $defaults = [
-                'enabled' => false, // Inactive by default
+                'enabled' => false,
                 'requireReason' => true,
                 'notifyEditors' => true,
                 'notifyAuthor' => true,

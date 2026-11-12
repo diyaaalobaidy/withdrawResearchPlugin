@@ -75,18 +75,13 @@ class WithdrawalService
         $stageId = (int) $submission->getData('stageId');
         $allowedStages = (array) $this->plugin->getSetting($contextId, 'allowedStages');
         if (empty($allowedStages)) {
-            $allowedStages = [
-                WORKFLOW_STAGE_ID_SUBMISSION,
-                WORKFLOW_STAGE_ID_EXTERNAL_REVIEW,
-                WORKFLOW_STAGE_ID_EDITING,
-                WORKFLOW_STAGE_ID_PRODUCTION,
-            ];
+            $allowedStages = [1, 3, 4, 5];
         }
         if (!in_array($stageId, array_map('intval', $allowedStages), true)) {
             return [false, 'stage_not_allowed', __('plugins.generic.withdrawResearchPlugin.error.stageNotAllowed')];
         }
 
-        // Authorship check
+        // Authorship / Role check: allows assigned authors, submitter, and managers/admins
         if (!$this->isUserAuthorOfSubmission($submissionId, $userId)) {
             return [false, 'not_author', __('plugins.generic.withdrawResearchPlugin.error.notAuthor')];
         }
@@ -95,29 +90,42 @@ class WithdrawalService
     }
 
     /**
-     * Determine whether the given user is assigned as an Author to the submission.
+     * Determine whether the given user is authorized to withdraw the submission
+     * (assigned author, submitter, or journal manager/admin).
      */
     public function isUserAuthorOfSubmission(int $submissionId, int $userId): bool
     {
-        // 1. Check via StageAssignments
-        $stageAssignments = Repo::stageAssignment()->getCollector()
-            ->filterBySubmissionIds([$submissionId])
-            ->filterByRoleIds([Role::ROLE_ID_AUTHOR])
-            ->filterByUserId($userId)
-            ->getMany();
+        $user = Repo::user()->get($userId);
+        $request = Application::get()->getRequest();
+        $context = $request ? $request->getContext() : null;
 
-        if ($stageAssignments && $stageAssignments->count() > 0) {
+        // Managers and site admins can always test and initiate withdrawal
+        if ($context && $user && ($user->hasRole([Role::ROLE_ID_MANAGER], $context->getId()) || $user->hasRole([Role::ROLE_ID_SITE_ADMIN], 0))) {
             return true;
         }
 
-        // 2. Fallback: check submission submitter ID (user_id in submissions table)
+        // 1. Check via StageAssignments
+        try {
+            $stageAssignments = Repo::stageAssignment()->getCollector()
+                ->filterBySubmissionIds([$submissionId])
+                ->filterByRoleIds([Role::ROLE_ID_AUTHOR])
+                ->filterByUserId($userId)
+                ->getMany();
+
+            if ($stageAssignments && $stageAssignments->count() > 0) {
+                return true;
+            }
+        } catch (\Throwable $e) {
+            // continue fallback checks
+        }
+
+        // 2. Check submission submitter ID (user_id in submissions table)
         $submission = Repo::submission()->get($submissionId);
         if ($submission && (int) $submission->getData('userId') === $userId) {
             return true;
         }
 
-        // 3. Fallback: check authors metadata table for matching email or user_id
-        $user = Repo::user()->get($userId);
+        // 3. Check authors metadata for matching email
         if ($user && $submission) {
             $userEmail = strtolower(trim((string) $user->getEmail()));
             $publication = $submission->getCurrentPublication();
@@ -125,8 +133,7 @@ class WithdrawalService
                 $authors = $publication->getData('authors') ?? [];
                 foreach ($authors as $author) {
                     $authorEmail = strtolower(trim((string) $author->getData('email')));
-                    $authorUserId = (int) $author->getData('userGroupId'); // or matching email
-                    if ($authorEmail === $userEmail) {
+                    if (!empty($authorEmail) && $authorEmail === $userEmail) {
                         return true;
                     }
                 }
@@ -264,22 +271,25 @@ class WithdrawalService
     {
         $recipients = [];
 
-        // 1. Stage assigned Sub Editors and Managers
-        $stageAssignments = Repo::stageAssignment()->getCollector()
-            ->filterBySubmissionIds([(int) $submission->getId()])
-            ->filterByRoleIds([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SUB_EDITOR])
-            ->getMany();
+        try {
+            $stageAssignments = Repo::stageAssignment()->getCollector()
+                ->filterBySubmissionIds([(int) $submission->getId()])
+                ->filterByRoleIds([Role::ROLE_ID_MANAGER, Role::ROLE_ID_SUB_EDITOR])
+                ->getMany();
 
-        if ($stageAssignments) {
-            foreach ($stageAssignments as $stageAssignment) {
-                $user = Repo::user()->get((int) $stageAssignment->getUserId());
-                if ($user && !empty($user->getEmail())) {
-                    $recipients[$user->getEmail()] = $user->getFullName();
+            if ($stageAssignments) {
+                foreach ($stageAssignments as $stageAssignment) {
+                    $user = Repo::user()->get((int) $stageAssignment->getUserId());
+                    if ($user && !empty($user->getEmail())) {
+                        $recipients[$user->getEmail()] = $user->getFullName();
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            // continue
         }
 
-        // 2. If no direct stage assignments found, fall back to Journal Primary Contact
+        // If no direct stage assignments found, fall back to Journal Primary Contact
         if (empty($recipients)) {
             $contactEmail = (string) $context->getData('contactEmail');
             $contactName = (string) $context->getData('contactName') ?: $context->getLocalizedName();

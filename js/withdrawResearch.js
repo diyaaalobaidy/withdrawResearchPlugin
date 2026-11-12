@@ -36,7 +36,7 @@
             : 'Withdraw Research';
 
         var btnHtml = $(
-            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border: 1px solid #b91c1c !important; color: #fff !important; font-weight: 600; margin: 0 8px; padding: 6px 14px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; z-index: 999;">' +
+            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border: 1px solid #b91c1c !important; color: #fff !important; font-weight: 600; margin: 0 10px; padding: 6px 14px; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.15); z-index: 9999;">' +
             '<span class="fa fa-ban" aria-hidden="true"></span>' +
             '<span>' + btnText + '</span>' +
             '</button>'
@@ -47,22 +47,33 @@
             openWithdrawModal();
         });
 
-        // Target locations in OJS 3.5 Vue workflow
+        // 1. Primary target: workflow header actions
         var $actionsTarget = $(
             '.pkpWorkflow__header .pkpHeader__actions, ' +
             '.pkpHeader__actions, ' +
             '.app__pageActions, ' +
-            '.stage_actions'
+            '.stage_actions, ' +
+            '.pkp_controllers_tab_workflow .pkpHeader__actions'
         ).first();
 
         if ($actionsTarget.length) {
             $actionsTarget.prepend(btnHtml);
-        } else {
-            var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading, .pkpWorkflow').first();
-            if ($idTarget.length) {
-                var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="margin: 10px 0;"></div>').append(btnHtml);
-                $idTarget.after($wrapper);
-            }
+            return;
+        }
+
+        // 2. Secondary target: right next to or after the workflow title/status
+        var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
+        if ($idTarget.length) {
+            var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="display: inline-block; vertical-align: middle; margin-left: 15px;"></div>').append(btnHtml);
+            $idTarget.after($wrapper);
+            return;
+        }
+
+        // 3. Fallback: prepend to workflow container
+        var $workflowContainer = $('.pkpWorkflow, #workflow, .pkp_submission_workflow, .pkp_page_content').first();
+        if ($workflowContainer.length) {
+            var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="margin: 12px 0;"></div>').append(btnHtml);
+            $workflowContainer.prepend($wrapper2);
         }
     }
 
@@ -165,7 +176,9 @@
     });
 
     // Check periodically for Vue-rendered workflow header
+    var attempts = 0;
     var checkInterval = setInterval(function() {
+        attempts++;
         if ($('#btnAuthorWithdrawResearch').length > 0 || window.isSubmissionWithdrawn) {
             clearInterval(checkInterval);
             return;
@@ -173,11 +186,10 @@
         if (window.canWithdrawSubmission && window.withdrawModalUrl) {
             initAuthorWithdrawalUI();
         }
-    }, 500);
-
-    setTimeout(function() {
-        clearInterval(checkInterval);
-    }, 10000);
+        if (attempts > 30) {
+            clearInterval(checkInterval);
+        }
+    }, 400);
 
     $(document).ajaxComplete(function() {
         if ($('#btnAuthorWithdrawResearch').length === 0) {

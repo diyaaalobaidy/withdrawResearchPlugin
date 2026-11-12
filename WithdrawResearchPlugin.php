@@ -52,8 +52,11 @@ class WithdrawResearchPlugin extends GenericPlugin
             // Register page handler hook for authorWithdraw endpoints
             Hook::add('LoadHandler', [$this, 'callbackLoadHandler']);
 
-            // Register TemplateManager hook for injecting assets and UI buttons
+            // Register TemplateManager hook for injecting assets and UI variables
             Hook::add('TemplateManager::display', [$this, 'callbackTemplateDisplay']);
+
+            // Hook directly into author & editor workflow templates
+            Hook::add('Template::Workflow', [$this, 'callbackTemplateWorkflow']);
         }
         return $success;
     }
@@ -139,12 +142,75 @@ class WithdrawResearchPlugin extends GenericPlugin
     }
 
     /**
-     * Hook into TemplateManager to inject JS/CSS and workflow withdrawal actions
+     * Direct template hook called on workflow pages (Template::Workflow)
+     */
+    public function callbackTemplateWorkflow(string $hookName, array $args): bool
+    {
+        $templateMgr = $args[1] ?? null;
+        $output = &$args[2];
+
+        if (!$templateMgr) {
+            return false;
+        }
+
+        $request = Application::get()->getRequest();
+        $context = $request ? $request->getContext() : null;
+        $user = $request ? $request->getUser() : null;
+
+        if (!$context || !$user) {
+            return false;
+        }
+
+        $submission = $templateMgr->getTemplateVars('submission');
+        if (!$submission || !method_exists($submission, 'getId')) {
+            return false;
+        }
+
+        $submissionId = (int) $submission->getId();
+        $contextId = (int) $context->getId();
+
+        [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, (int) $user->getId(), $contextId);
+
+        $modalUrl = $request->getDispatcher()->url(
+            $request,
+            PKPApplication::ROUTE_PAGE,
+            null,
+            'authorWithdraw',
+            'modal',
+            null,
+            ['submissionId' => $submissionId]
+        );
+
+        $submitUrl = $request->getDispatcher()->url(
+            $request,
+            PKPApplication::ROUTE_PAGE,
+            null,
+            'authorWithdraw',
+            'submitWithdrawal'
+        );
+
+        $templateMgr->assign([
+            'canWithdrawSubmission' => $canWithdraw,
+            'withdrawModalUrl' => $modalUrl,
+            'withdrawSubmitUrl' => $submitUrl,
+            'withdrawSubmissionId' => $submissionId,
+            'isSubmissionWithdrawn' => (bool) $submission->getData('withdrawal:isWithdrawn'),
+            'submissionWithdrawalReason' => (string) $submission->getData('withdrawal:reasonLabel'),
+            'submissionWithdrawalDate' => (string) $submission->getData('withdrawal:dateWithdrawn'),
+        ]);
+
+        $renderedHtml = $templateMgr->fetch($this->getTemplateResource('author/workflowAction.tpl'));
+        $output .= $renderedHtml;
+
+        return false;
+    }
+
+    /**
+     * Hook into TemplateManager to inject JS/CSS and workflow withdrawal parameters
      */
     public function callbackTemplateDisplay(string $hookName, array $args): bool
     {
         $templateMgr = $args[0];
-        $template = $args[1] ?? '';
         $request = Application::get()->getRequest();
         $context = $request ? $request->getContext() : null;
 
@@ -162,7 +228,7 @@ class WithdrawResearchPlugin extends GenericPlugin
             return false;
         }
 
-        // Add custom CSS and JS
+        // Add custom CSS and JS to backend templates
         $templateMgr->addStyleSheet(
             'withdrawResearchPluginCss',
             $request->getBaseUrl() . '/' . $this->getPluginPath() . '/css/withdrawResearch.css',
@@ -173,12 +239,6 @@ class WithdrawResearchPlugin extends GenericPlugin
             'withdrawResearchPluginJs',
             $request->getBaseUrl() . '/' . $this->getPluginPath() . '/js/withdrawResearch.js',
             ['contexts' => ['backend']]
-        );
-
-        // Check if viewing workflow template
-        $isWorkflowTemplate = (
-            strpos($template, 'workflow/workflow.tpl') !== false ||
-            strpos($template, 'workflow.tpl') !== false
         );
 
         $submission = $templateMgr->getTemplateVars('submission');
@@ -204,7 +264,6 @@ class WithdrawResearchPlugin extends GenericPlugin
                 'submitWithdrawal'
             );
 
-            // Pass withdrawal configuration variables to JS frontend
             $templateMgr->assign([
                 'canWithdrawSubmission' => $canWithdraw,
                 'withdrawModalUrl' => $modalUrl,
@@ -214,6 +273,34 @@ class WithdrawResearchPlugin extends GenericPlugin
                 'submissionWithdrawalReason' => (string) $submission->getData('withdrawal:reasonLabel'),
                 'submissionWithdrawalDate' => (string) $submission->getData('withdrawal:dateWithdrawn'),
             ]);
+
+            // Expose configuration directly to the frontend window object
+            $jsVars = sprintf(
+                '<script type="text/javascript">
+                    window.canWithdrawSubmission = %s;
+                    window.withdrawModalUrl = %s;
+                    window.withdrawSubmitUrl = %s;
+                    window.withdrawSubmissionId = %d;
+                    window.isSubmissionWithdrawn = %s;
+                    window.submissionWithdrawalReason = %s;
+                    window.submissionWithdrawalDate = %s;
+                    window.pkpWithdrawLocales = {
+                        btnText: %s,
+                        modalTitle: %s
+                    };
+                </script>',
+                $canWithdraw ? 'true' : 'false',
+                json_encode($modalUrl),
+                json_encode($submitUrl),
+                $submissionId,
+                $submission->getData('withdrawal:isWithdrawn') ? 'true' : 'false',
+                json_encode((string) $submission->getData('withdrawal:reasonLabel')),
+                json_encode((string) $submission->getData('withdrawal:dateWithdrawn')),
+                json_encode(__('plugins.generic.withdrawResearchPlugin.author.button')),
+                json_encode(__('plugins.generic.withdrawResearchPlugin.author.modalTitle'))
+            );
+
+            $templateMgr->addHeader('withdrawResearchPluginVars', $jsVars);
         }
 
         return false;

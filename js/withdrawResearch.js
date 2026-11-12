@@ -12,6 +12,13 @@
         initAuthorWithdrawalUI();
     });
 
+    // Also run on dynamic Vue / Ajax changes
+    $(document).ajaxComplete(function() {
+        if ($('#btnAuthorWithdrawResearch').length === 0 && $('#btnAuthorWithdrawDirect').length === 0) {
+            initAuthorWithdrawalUI();
+        }
+    });
+
     function initAuthorWithdrawalUI() {
         // If submission is already withdrawn, display banner
         if (window.isSubmissionWithdrawn) {
@@ -31,15 +38,18 @@
      * Inject Withdraw Research button into the workflow actions or header
      */
     function injectWithdrawButton() {
-        // Avoid duplicate button injection
         if ($('#btnAuthorWithdrawResearch').length > 0) {
             return;
         }
 
+        var btnText = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText)
+            ? window.pkpWithdrawLocales.btnText
+            : 'Withdraw Research';
+
         var btnHtml = $(
-            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn">' +
+            '<button type="button" id="btnAuthorWithdrawResearch" class="pkp_button pkp_button_danger withdraw_action_btn" style="background-color: #dc2626 !important; border-color: #b91c1c !important; color: #fff !important; font-weight: 600; margin-right: 8px;">' +
             '<span class="fa fa-ban" aria-hidden="true" style="margin-right: 5px;"></span>' +
-            (window.pkpWithdrawLocales && window.pkpWithdrawLocales.btnText ? window.pkpWithdrawLocales.btnText : 'Withdraw Research') +
+            btnText +
             '</button>'
         );
 
@@ -48,17 +58,24 @@
             openWithdrawModal();
         });
 
-        // Try primary target: workflow header actions (.pkpHeader__actions, .pkp_workflow .pkp_page_title)
-        var $actionsTarget = $('.pkpHeader__actions, .pkp_workflow_header .pkpHeader__actions, .stage_actions, .pkp_controllers_tab_workflow .pkpHeader__actions').first();
+        // Search for primary targets in OJS 3.5 Vue workflow
+        var $actionsTarget = $('.pkpWorkflow__header .pkpHeader__actions, .pkpHeader__actions, .stage_actions').first();
 
         if ($actionsTarget.length) {
             $actionsTarget.prepend(btnHtml);
         } else {
-            // Fallback: place in editorial actions / stage container or top bar
-            var $fallbackTarget = $('.pkp_tab_actions, .pkp_workflow, #workflow').first();
-            if ($fallbackTarget.length) {
-                var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="margin: 10px 0;"></div>').append(btnHtml);
-                $fallbackTarget.prepend($wrapper);
+            // Secondary target: insertion right after submission identification / title
+            var $idTarget = $('.pkpWorkflow__identification, h1.app__pageHeading').first();
+            if ($idTarget.length) {
+                var $wrapper = $('<div class="withdraw_action_btn_wrapper" style="margin: 12px 0;"></div>').append(btnHtml);
+                $idTarget.after($wrapper);
+            } else {
+                // Fallback: prepend to workflow container
+                var $fallback = $('#workflow, .pkpWorkflow, .pkp_submission_workflow').first();
+                if ($fallback.length) {
+                    var $wrapper2 = $('<div class="withdraw_action_btn_wrapper" style="margin: 12px 0;"></div>').append(btnHtml);
+                    $fallback.prepend($wrapper2);
+                }
             }
         }
     }
@@ -66,11 +83,12 @@
     /**
      * Open AJAX modal for manuscript withdrawal
      */
-    function openWithdrawModal() {
+    window.openWithdrawModal = function() {
         var modalId = 'authorWithdrawModalDialog';
-        var title = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle) ? window.pkpWithdrawLocales.modalTitle : 'Withdraw Research Submission';
+        var title = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle)
+            ? window.pkpWithdrawLocales.modalTitle
+            : 'Withdraw Research Submission';
 
-        // Use PKP modal handler if available
         if ($.pkp && $.pkp.controllers && $.pkp.controllers.modal && $.pkp.controllers.modal.AjaxModalHandler) {
             var $modal = $('<div id="' + modalId + '" class="pkp_modal pkpModal"></div>');
             $('body').append($modal);
@@ -80,10 +98,17 @@
                 canClose: true
             });
         } else {
-            // Native fallback modal container
+            // Fallback modal container
             $.get(window.withdrawModalUrl, function(response) {
                 if (response && response.status === true && response.content) {
-                    var $dialog = $('<div id="' + modalId + '" class="withdraw_native_modal_overlay"><div class="withdraw_native_modal_dialog"><button class="withdraw_modal_close">&times;</button><h3>' + title + '</h3><div class="withdraw_native_modal_body">' + response.content + '</div></div></div>');
+                    var $dialog = $(
+                        '<div id="' + modalId + '" class="withdraw_native_modal_overlay">' +
+                        '<div class="withdraw_native_modal_dialog">' +
+                        '<button type="button" class="withdraw_modal_close">&times;</button>' +
+                        '<h3 style="margin-top: 0; color: #1e293b; font-size: 1.15rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">' + title + '</h3>' +
+                        '<div class="withdraw_native_modal_body">' + response.content + '</div>' +
+                        '</div></div>'
+                    );
                     $('body').append($dialog);
 
                     $dialog.find('.withdraw_modal_close, .withdraw_btn_cancel').on('click', function() {
@@ -92,7 +117,7 @@
                 }
             });
         }
-    }
+    };
 
     /**
      * Render notice banner when viewing a withdrawn manuscript
@@ -107,16 +132,16 @@
         var bannerText = 'This research was withdrawn by the author' + (date ? ' on ' + date : '') + (reason ? '. Reason: ' + reason : '');
 
         var banner = $(
-            '<div class="withdraw_withdrawn_status_banner">' +
-            '<span class="fa fa-info-circle" aria-hidden="true"></span> ' +
+            '<div class="withdraw_withdrawn_status_banner" style="margin: 15px 0; padding: 12px 18px; background: #fff1f2; border: 1px solid #fecdd3; border-left: 4px solid #e11d48; border-radius: 4px; color: #9f1239; font-size: 14px;">' +
+            '<span class="fa fa-info-circle" aria-hidden="true" style="margin-right: 8px;"></span>' +
             '<strong>' + bannerText + '</strong>' +
             '</div>'
         );
 
-        $('.pkp_workflow, .pkp_page_content, #workflow').first().prepend(banner);
+        $('.pkpWorkflow, .pkp_submission_workflow, #workflow, .pkp_page_content').first().prepend(banner);
     }
 
-    // Attach delegated submission handler for the withdrawal form
+    // Delegated submission handler for the withdrawal form
     $(document).on('submit', '#authorWithdrawForm', function(e) {
         e.preventDefault();
 

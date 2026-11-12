@@ -191,31 +191,41 @@ class WithdrawResearchPlugin extends GenericPlugin
             ['contexts' => ['backend', 'frontend']]
         );
 
-        // Extract submission ID from template variables, request, or URL args
+        // Resolve submission ID across all possible sources in OJS 3.5
         $submissionId = 0;
         $submission = $templateMgr->getTemplateVars('submission');
 
-        if ($submission && method_exists($submission, 'getId')) {
+        if ($submission && is_object($submission) && method_exists($submission, 'getId')) {
             $submissionId = (int) $submission->getId();
-        } elseif ($request->getUserVar('submissionId')) {
+        }
+
+        if ($submissionId === 0) {
+            $workflowSubmission = $templateMgr->getTemplateVars('workflowSubmission');
+            if ($workflowSubmission && is_object($workflowSubmission) && method_exists($workflowSubmission, 'getId')) {
+                $submissionId = (int) $workflowSubmission->getId();
+                $submission = $workflowSubmission;
+            }
+        }
+
+        if ($submissionId === 0 && $request->getUserVar('submissionId')) {
             $submissionId = (int) $request->getUserVar('submissionId');
-            $submission = Repo::submission()->get($submissionId);
-        } else {
+        }
+
+        if ($submissionId === 0) {
             $requestedArgs = (array) $request->getRequestedArgs();
             foreach ($requestedArgs as $arg) {
                 if (is_numeric($arg) && (int) $arg > 0) {
                     $submissionId = (int) $arg;
-                    $submission = Repo::submission()->get($submissionId);
                     break;
                 }
             }
+        }
 
-            if ($submissionId === 0) {
-                $uri = (string) $request->getRequestPath();
-                if (preg_match('#/(?:workflow|authorDashboard)/(?:index|submission)/(\d+)#', $uri, $matches)) {
-                    $submissionId = (int) $matches[1];
-                    $submission = Repo::submission()->get($submissionId);
-                }
+        // Check SERVER URI path (e.g. /workflow/index/42, /authorDashboard/submission/42, /submissions/42)
+        if ($submissionId === 0) {
+            $uri = (string) ($_SERVER['REQUEST_URI'] ?? '');
+            if (preg_match('#/(?:workflow|authorDashboard|submission|submissions)/(?:index/|submission/)?(\d+)#i', $uri, $matches)) {
+                $submissionId = (int) $matches[1];
             }
         }
 
@@ -226,32 +236,32 @@ class WithdrawResearchPlugin extends GenericPlugin
         $modalUrl = '';
         $submitUrl = '';
 
-        if ($submissionId > 0 && $userId > 0) {
-            if (!$submission) {
+        if ($submissionId > 0) {
+            if (!$submission || !method_exists($submission, 'getId')) {
                 $submission = Repo::submission()->get($submissionId);
             }
 
-            [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, $userId, $contextId);
+            if ($submission && $userId > 0) {
+                [$canWithdraw, $code, $msg] = $this->getService()->canWithdraw($submissionId, $userId, $contextId);
 
-            $modalUrl = $request->getDispatcher()->url(
-                $request,
-                PKPApplication::ROUTE_PAGE,
-                null,
-                'authorWithdraw',
-                'modal',
-                null,
-                ['submissionId' => $submissionId]
-            );
+                $modalUrl = $request->getDispatcher()->url(
+                    $request,
+                    PKPApplication::ROUTE_PAGE,
+                    null,
+                    'authorWithdraw',
+                    'modal',
+                    null,
+                    ['submissionId' => $submissionId]
+                );
 
-            $submitUrl = $request->getDispatcher()->url(
-                $request,
-                PKPApplication::ROUTE_PAGE,
-                null,
-                'authorWithdraw',
-                'submitWithdrawal'
-            );
+                $submitUrl = $request->getDispatcher()->url(
+                    $request,
+                    PKPApplication::ROUTE_PAGE,
+                    null,
+                    'authorWithdraw',
+                    'submitWithdrawal'
+                );
 
-            if ($submission) {
                 $isWithdrawn = (bool) $submission->getData('withdrawal:isWithdrawn');
                 $withdrawalReason = (string) $submission->getData('withdrawal:reasonLabel');
                 $withdrawalDate = (string) $submission->getData('withdrawal:dateWithdrawn');
@@ -266,6 +276,13 @@ class WithdrawResearchPlugin extends GenericPlugin
             'date' => $withdrawalDate,
             'modalUrl' => $modalUrl,
             'submitUrl' => $submitUrl,
+            'checkUrl' => $request->getDispatcher()->url(
+                $request,
+                PKPApplication::ROUTE_PAGE,
+                null,
+                'authorWithdraw',
+                'modal'
+            ),
             'btnText' => __('plugins.generic.withdrawResearchPlugin.author.button'),
             'modalTitle' => __('plugins.generic.withdrawResearchPlugin.author.modalTitle'),
             'debug' => true,

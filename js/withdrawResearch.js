@@ -12,6 +12,35 @@
         return window.withdrawResearchPluginConfig || {};
     }
 
+    /**
+     * Detect submission ID from current browser URL if server-side resolution was 0
+     */
+    function detectClientSubmissionId() {
+        var cfg = getCfg();
+        if (cfg.submissionId && parseInt(cfg.submissionId, 10) > 0) {
+            return parseInt(cfg.submissionId, 10);
+        }
+
+        // Try parsing from window.location.pathname / hash / search
+        var path = window.location.pathname + window.location.search;
+        var match = path.match(/(?:workflow|authorDashboard|submission|submissions)(?:\/index|\/submission)?\/(\d+)/i);
+        if (match && match[1]) {
+            return parseInt(match[1], 10);
+        }
+
+        var paramMatch = window.location.search.match(/[?&]submissionId=(\d+)/i);
+        if (paramMatch && paramMatch[1]) {
+            return parseInt(paramMatch[1], 10);
+        }
+
+        // Check if pkp Vue global has current submission ID
+        if (window.pkp && window.pkp.context && window.pkp.context.submission) {
+            return parseInt(window.pkp.context.submission.id, 10);
+        }
+
+        return 0;
+    }
+
     function initAuthorWithdrawalUI() {
         var cfg = getCfg();
 
@@ -21,21 +50,30 @@
             return;
         }
 
-        // 2. Only inject if user has permission to withdraw
-        var canWithdraw = cfg.canWithdraw !== undefined ? cfg.canWithdraw : window.canWithdrawSubmission;
-        var modalUrl = cfg.modalUrl || window.withdrawModalUrl;
-
-        if (!canWithdraw || !modalUrl) {
+        var subId = detectClientSubmissionId();
+        if (!subId) {
             return;
         }
 
-        injectWithdrawButton();
+        // If client knows the submission ID, construct modal URL if empty
+        var modalUrl = cfg.modalUrl || window.withdrawModalUrl;
+        if (!modalUrl && cfg.checkUrl) {
+            modalUrl = cfg.checkUrl + (cfg.checkUrl.indexOf('?') >= 0 ? '&' : '?') + 'submissionId=' + subId;
+            cfg.modalUrl = modalUrl;
+            window.withdrawModalUrl = modalUrl;
+        }
+
+        if (!modalUrl) {
+            return;
+        }
+
+        injectWithdrawButton(modalUrl);
     }
 
     /**
      * Inject Withdraw Research button into the workflow actions or header
      */
-    function injectWithdrawButton() {
+    function injectWithdrawButton(modalUrl) {
         if ($('#btnAuthorWithdrawResearch').length > 0) {
             return;
         }
@@ -52,10 +90,10 @@
 
         btnHtml.on('click', function(e) {
             e.preventDefault();
-            openWithdrawModal();
+            openWithdrawModal(modalUrl);
         });
 
-        // 1. Target: workflow header actions (.pkpWorkflow__header .pkpHeader__actions)
+        // 1. Target: workflow header actions
         var $actionsTarget = $(
             '.pkpWorkflow__header .pkpHeader__actions, ' +
             '.pkpHeader__actions, ' +
@@ -88,11 +126,18 @@
     /**
      * Open AJAX modal for manuscript withdrawal
      */
-    window.openWithdrawModal = function() {
+    window.openWithdrawModal = function(urlOverride) {
         var cfg = getCfg();
         var modalId = 'authorWithdrawModalDialog';
         var title = cfg.modalTitle || (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle) || 'Withdraw Research Submission';
-        var modalUrl = cfg.modalUrl || window.withdrawModalUrl;
+        var modalUrl = urlOverride || cfg.modalUrl || window.withdrawModalUrl;
+
+        if (!modalUrl) {
+            var subId = detectClientSubmissionId();
+            if (subId && cfg.checkUrl) {
+                modalUrl = cfg.checkUrl + (cfg.checkUrl.indexOf('?') >= 0 ? '&' : '?') + 'submissionId=' + subId;
+            }
+        }
 
         if ($.pkp && $.pkp.controllers && $.pkp.controllers.modal && $.pkp.controllers.modal.AjaxModalHandler) {
             var $modal = $('<div id="' + modalId + '" class="pkp_modal pkpModal"></div>');

@@ -48,7 +48,7 @@ class WithdrawResearchPlugin extends GenericPlugin
     public function register($category, $path, $mainContextId = null): bool
     {
         $success = parent::register($category, $path, $mainContextId);
-        if ($success && $this->getEnabled($mainContextId)) {
+        if ($success) {
             // Register page handler hook for authorWithdraw endpoints
             Hook::add('LoadHandler', [$this, 'callbackLoadHandler']);
 
@@ -182,7 +182,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         $templateMgr->addStyleSheet('withdrawResearchPluginCss', $baseUrl . '/css/withdrawResearch.css');
         $templateMgr->addJavaScript('withdrawResearchPluginJs', $baseUrl . '/js/withdrawResearch.js');
 
-        // Extract submission ID from template or request URL/params
+        // Extract submission ID from template, request, or URI path
         $submissionId = 0;
         $submission = $templateMgr->getTemplateVars('submission');
 
@@ -199,6 +199,15 @@ class WithdrawResearchPlugin extends GenericPlugin
                     $submissionId = (int) $arg;
                     $submission = Repo::submission()->get($submissionId);
                     break;
+                }
+            }
+
+            // Fallback: parse submission ID from request path URI
+            if ($submissionId === 0) {
+                $uri = (string) $request->getRequestPath();
+                if (preg_match('#/(?:workflow|authorDashboard)/(?:index|submission)/(\d+)#', $uri, $matches)) {
+                    $submissionId = (int) $matches[1];
+                    $submission = Repo::submission()->get($submissionId);
                 }
             }
         }

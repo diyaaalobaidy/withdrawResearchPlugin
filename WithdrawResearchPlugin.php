@@ -308,4 +308,34 @@ class WithdrawResearchPlugin extends GenericPlugin
 
         return false;
     }
+
+    /**
+     * @copydoc Plugin::getSetting()
+     *
+     * Inactive (disabled) by default until explicitly enabled by the Journal Manager.
+     */
+    public function getSetting($contextId, $name, $default = null)
+    {
+        $val = parent::getSetting($contextId, $name);
+        if ($val === null) {
+            $defaults = [
+                'enabled' => false, // Inactive by default
+                'requireReason' => true,
+                'notifyEditors' => true,
+                'notifyAuthor' => true,
+                'withdrawalPolicy' => '',
+                'allowedStages' => [1, 3, 4, 5],
+            ];
+
+            if ($default !== null) {
+                return $default;
+            }
+
+            if (array_key_exists($name, $defaults)) {
+                return $defaults[$name];
+            }
+        }
+
+        return $val;
+    }
 }

@@ -1,10 +1,10 @@
 /**
- * Styles for Author Research Withdrawal Plugin
+ * Styles for Author Research Withdrawal Plugin - OJS 3.5
  */
 
 .withdraw_action_btn {
-    background-color: #d9534f !important;
-    border-color: #d43f3a !important;
+    background-color: #dc2626 !important;
+    border: 1px solid #b91c1c !important;
     color: #fff !important;
     font-weight: 600 !important;
     cursor: pointer;
@@ -13,8 +13,8 @@
 
 .withdraw_action_btn:hover,
 .withdraw_action_btn:focus {
-    background-color: #c9302c !important;
-    border-color: #ac2925 !important;
+    background-color: #b91c1c !important;
+    border-color: #991b1b !important;
     color: #fff !important;
 }
 
@@ -146,13 +146,13 @@
 }
 
 .withdraw_btn_confirm {
-    background-color: #e53e3e !important;
-    border-color: #c53030 !important;
+    background-color: #dc2626 !important;
+    border-color: #b91c1c !important;
     color: #fff !important;
 }
 
 .withdraw_btn_confirm:hover {
-    background-color: #c53030 !important;
+    background-color: #b91c1c !important;
 }
 
 .withdraw_withdrawn_status_banner {
@@ -165,44 +165,48 @@
     font-size: 14px;
 }
 
-/* Fallback native modal overlay */
+/* Modal overlay & container */
 .withdraw_native_modal_overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.75) !important;
+    backdrop-filter: blur(2px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2147483647 !important; /* Maximum 32-bit z-index */
 }
 
 .withdraw_native_modal_dialog {
-    background: #fff;
-    width: 90%;
-    max-width: 650px;
-    border-radius: 6px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-    padding: 24px;
-    position: relative;
-    max-height: 90vh;
-    overflow-y: auto;
+    background: #ffffff !important;
+    width: 92% !important;
+    max-width: 650px !important;
+    border-radius: 8px !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35) !important;
+    padding: 24px 28px !important;
+    position: relative !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    z-index: 2147483647 !important;
 }
 
 .withdraw_modal_close {
-    position: absolute;
-    top: 14px;
-    right: 16px;
-    background: none;
-    border: none;
-    font-size: 24px;
-    line-height: 1;
-    cursor: pointer;
-    color: #718096;
+    position: absolute !important;
+    top: 14px !important;
+    right: 18px !important;
+    background: none !important;
+    border: none !important;
+    font-size: 28px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    color: #64748b !important;
 }
 
 .withdraw_modal_close:hover {
-    color: #1a202c;
+    color: #0f172a !important;
 }

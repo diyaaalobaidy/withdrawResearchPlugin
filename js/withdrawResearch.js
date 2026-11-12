@@ -95,10 +95,8 @@
     }
 
     function injectButton() {
-        // STRICT AUTHOR CHECK: Only show if author permission is true
         var cfg = getCfg();
         if (cfg.canWithdraw !== true && window.canWithdrawSubmission !== true) {
-            // If user is an editor / not the author, remove button if present and return
             $('#btnAuthorWithdrawResearch').remove();
             return false;
         }
@@ -150,19 +148,27 @@
             success: function(response) {
                 if (response && response.status === true && response.content) {
                     var $dialog = $(
-                        '<div id="' + modalId + '" class="withdraw_native_modal_overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.65); z-index: 9999999; display: flex; align-items: center; justify-content: center;">' +
-                        '<div class="withdraw_native_modal_dialog" style="background: #fff; width: 90%; max-width: 650px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); padding: 24px; position: relative; max-height: 90vh; overflow-y: auto;">' +
-                        '<button type="button" class="withdraw_modal_close" style="position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 26px; cursor: pointer; color: #64748b; line-height: 1;">&times;</button>' +
-                        '<h3 style="margin-top: 0; color: #1e293b; font-size: 1.2rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">' + title + '</h3>' +
+                        '<div id="' + modalId + '" class="withdraw_native_modal_overlay" style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(2px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 2147483647 !important;">' +
+                        '<div class="withdraw_native_modal_dialog" style="background: #ffffff !important; width: 92% !important; max-width: 650px !important; border-radius: 8px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important; padding: 26px 30px !important; position: relative !important; max-height: 90vh !important; overflow-y: auto !important; z-index: 2147483647 !important;">' +
+                        '<button type="button" class="withdraw_modal_close" style="position: absolute !important; top: 14px !important; right: 18px !important; background: none !important; border: none !important; font-size: 28px !important; cursor: pointer !important; color: #64748b !important; line-height: 1 !important;">&times;</button>' +
+                        '<h3 style="margin-top: 0 !important; color: #0f172a !important; font-size: 1.25rem !important; font-weight: 700 !important; border-bottom: 1px solid #e2e8f0 !important; padding-bottom: 12px !important;">' + title + '</h3>' +
                         '<div class="withdraw_native_modal_body">' + response.content + '</div>' +
                         '</div></div>'
                     );
 
-                    $('body').append($dialog);
+                    // Append directly to document.body to escape any drawer stacking context
+                    $(document.body).append($dialog);
 
                     $dialog.find('.withdraw_modal_close, .withdraw_btn_cancel').on('click', function(e) {
                         e.preventDefault();
                         $dialog.remove();
+                    });
+
+                    // Close on overlay backdrop click
+                    $dialog.on('click', function(e) {
+                        if ($(e.target).hasClass('withdraw_native_modal_overlay')) {
+                            $dialog.remove();
+                        }
                     });
                 } else {
                     alert((response && response.content) ? response.content : 'Failed to load withdrawal modal.');

@@ -138,6 +138,21 @@
         var modalId = 'authorWithdrawModalDialog';
         var title = (window.pkpWithdrawLocales && window.pkpWithdrawLocales.modalTitle) || 'Withdraw Research Submission';
 
+        // 1. First choice: Use PKP native AjaxModalHandler
+        // This integrates directly into OJS's modal manager, managing focus, masks, and layering properly
+        if ($.pkp && $.pkp.controllers && $.pkp.controllers.modal && $.pkp.controllers.modal.AjaxModalHandler) {
+            $('#' + modalId).remove();
+            var $pkpModal = $('<div id="' + modalId + '" class="pkp_modal pkpModalWrapper" tabindex="-1" style="z-index: 2147483647 !important;"></div>');
+            $('body').append($pkpModal);
+            $pkpModal.pkpHandler('$.pkp.controllers.modal.AjaxModalHandler', {
+                title: title,
+                url: url,
+                canClose: true
+            });
+            return;
+        }
+
+        // 2. Standalone modal fallback: attach to root document.documentElement
         $('#' + modalId).remove();
         $('.withdraw_native_modal_overlay').remove();
 
@@ -147,28 +162,37 @@
             dataType: 'json',
             success: function(response) {
                 if (response && response.status === true && response.content) {
-                    var $dialog = $(
-                        '<div id="' + modalId + '" class="withdraw_native_modal_overlay" style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100vw !important; height: 100vh !important; background: rgba(15, 23, 42, 0.75) !important; backdrop-filter: blur(2px) !important; display: flex !important; align-items: center !important; justify-content: center !important; z-index: 2147483647 !important;">' +
-                        '<div class="withdraw_native_modal_dialog" style="background: #ffffff !important; width: 92% !important; max-width: 650px !important; border-radius: 8px !important; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important; padding: 26px 30px !important; position: relative !important; max-height: 90vh !important; overflow-y: auto !important; z-index: 2147483647 !important;">' +
-                        '<button type="button" class="withdraw_modal_close" style="position: absolute !important; top: 14px !important; right: 18px !important; background: none !important; border: none !important; font-size: 28px !important; cursor: pointer !important; color: #64748b !important; line-height: 1 !important;">&times;</button>' +
-                        '<h3 style="margin-top: 0 !important; color: #0f172a !important; font-size: 1.25rem !important; font-weight: 700 !important; border-bottom: 1px solid #e2e8f0 !important; padding-bottom: 12px !important;">' + title + '</h3>' +
-                        '<div class="withdraw_native_modal_body">' + response.content + '</div>' +
-                        '</div></div>'
+                    var $overlay = $(
+                        '<div id="' + modalId + '" class="withdraw_native_modal_overlay">' +
+                        '  <div class="withdraw_native_modal_dialog">' +
+                        '    <button type="button" class="withdraw_modal_close">&times;</button>' +
+                        '    <h3 style="margin-top: 0 !important; color: #0f172a !important; font-size: 1.25rem !important; font-weight: 700 !important; border-bottom: 1px solid #e2e8f0 !important; padding-bottom: 12px !important;">' + title + '</h3>' +
+                        '    <div class="withdraw_native_modal_body">' + response.content + '</div>' +
+                        '  </div>' +
+                        '</div>'
                     );
 
-                    // Append directly to document.body to escape any drawer stacking context
-                    $(document.body).append($dialog);
+                    // Insert at top of body to guarantee event order
+                    $('body').prepend($overlay);
 
-                    $dialog.find('.withdraw_modal_close, .withdraw_btn_cancel').on('click', function(e) {
+                    $overlay.find('.withdraw_modal_close, .withdraw_btn_cancel').on('click', function(e) {
                         e.preventDefault();
-                        $dialog.remove();
+                        e.stopPropagation();
+                        $overlay.remove();
                     });
 
-                    // Close on overlay backdrop click
-                    $dialog.on('click', function(e) {
+                    // Close on clicking backdrop
+                    $overlay.on('click', function(e) {
                         if ($(e.target).hasClass('withdraw_native_modal_overlay')) {
-                            $dialog.remove();
+                            e.preventDefault();
+                            e.stopPropagation();
+                            $overlay.remove();
                         }
+                    });
+
+                    // Prevent click bleedthrough to background
+                    $overlay.find('.withdraw_native_modal_dialog').on('click', function(e) {
+                        e.stopPropagation();
                     });
                 } else {
                     alert((response && response.content) ? response.content : 'Failed to load withdrawal modal.');
@@ -183,6 +207,7 @@
     // Delegated submission handler for the withdrawal form
     $(document).on('submit', '#authorWithdrawForm', function(e) {
         e.preventDefault();
+        e.stopPropagation();
 
         var $form = $(this);
         var $btn = $form.find('#submitWithdrawBtn');

@@ -106,6 +106,7 @@
     border-radius: 4px;
     font-size: 14px;
     background-color: #fff;
+    color: #1e293b;
 }
 
 .pkp_author_withdraw_modal select.pkp_select:focus,
@@ -179,7 +180,8 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    z-index: 2147483647 !important; /* Maximum 32-bit z-index */
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
 }
 
 .withdraw_native_modal_dialog {
@@ -187,12 +189,13 @@
     width: 92% !important;
     max-width: 650px !important;
     border-radius: 8px !important;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35) !important;
-    padding: 24px 28px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4) !important;
+    padding: 26px 30px !important;
     position: relative !important;
     max-height: 90vh !important;
     overflow-y: auto !important;
     z-index: 2147483647 !important;
+    pointer-events: auto !important;
 }
 
 .withdraw_modal_close {
@@ -209,4 +212,15 @@
 
 .withdraw_modal_close:hover {
     color: #0f172a !important;
+}
+
+/* Ensure PKP AjaxModalWrapper also floats above all side-drawers and Vue masks */
+.pkp_modal.pkpModalWrapper,
+.ui-dialog.pkp_controllers_modal_ajaxModalHandler {
+    z-index: 2147483647 !important;
+    pointer-events: auto !important;
+}
+
+.ui-widget-overlay {
+    z-index: 2147483640 !important;
 }

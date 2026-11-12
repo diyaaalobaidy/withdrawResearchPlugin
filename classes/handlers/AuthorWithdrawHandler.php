@@ -77,6 +77,17 @@ class AuthorWithdrawHandler extends Handler
         }
 
         $submission = Repo::submission()->get($submissionId);
+        $submissionTitle = '';
+        if ($submission) {
+            $publication = $submission->getCurrentPublication();
+            if ($publication) {
+                $submissionTitle = (string) ($publication->getLocalizedTitle() ?: $publication->getLocalizedData('title'));
+            }
+            if (empty($submissionTitle) && method_exists($submission, 'getLocalizedTitle')) {
+                $submissionTitle = (string) $submission->getLocalizedTitle();
+            }
+        }
+
         $reasons = $this->service->getWithdrawalReasons();
         $policy = (string) $this->plugin->getSetting($contextId, 'withdrawalPolicy');
         $requireReason = (bool) $this->plugin->getSetting($contextId, 'requireReason');
@@ -84,7 +95,7 @@ class AuthorWithdrawHandler extends Handler
         $templateMgr = PKPTemplateManager::getManager($request);
         $templateMgr->assign([
             'submissionId' => $submissionId,
-            'submissionTitle' => $submission->getLocalizedTitle(),
+            'submissionTitle' => $submissionTitle,
             'reasons' => $reasons,
             'withdrawalPolicy' => $policy,
             'requireReason' => $requireReason,

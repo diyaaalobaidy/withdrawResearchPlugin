@@ -38,6 +38,26 @@ class WithdrawalService
     }
 
     /**
+     * Get localized title safely across OJS 3.3/3.4/3.5 models.
+     */
+    public function getSubmissionTitle(PKPSubmission $submission): string
+    {
+        $publication = $submission->getCurrentPublication();
+        if ($publication) {
+            $title = (string) ($publication->getLocalizedTitle() ?: $publication->getLocalizedData('title'));
+            if (!empty($title)) {
+                return $title;
+            }
+        }
+
+        if (method_exists($submission, 'getLocalizedTitle')) {
+            return (string) $submission->getLocalizedTitle();
+        }
+
+        return (string) ($submission->getData('title') ?: ('#' . $submission->getId()));
+    }
+
+    /**
      * Check if a given user is allowed to request withdrawal for a submission.
      *
      * @param int $submissionId
@@ -317,7 +337,7 @@ class WithdrawalService
         }
 
         $journalName = $context->getLocalizedName();
-        $articleTitle = $submission->getLocalizedTitle();
+        $articleTitle = $this->getSubmissionTitle($submission);
         $submissionId = $submission->getId();
 
         $subject = __('plugins.generic.withdrawResearchPlugin.email.editorSubject', [
@@ -355,7 +375,7 @@ class WithdrawalService
         string $withdrawalNote
     ): void {
         $journalName = $context->getLocalizedName();
-        $articleTitle = $submission->getLocalizedTitle();
+        $articleTitle = $this->getSubmissionTitle($submission);
         $submissionId = $submission->getId();
 
         $subject = __('plugins.generic.withdrawResearchPlugin.email.authorSubject', [

@@ -78,6 +78,22 @@ class WithdrawResearchPlugin extends GenericPlugin
     }
 
     /**
+     * @copydoc Plugin::getCanEnable()
+     */
+    public function getCanEnable(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @copydoc Plugin::getCanDisable()
+     */
+    public function getCanDisable(): bool
+    {
+        return true;
+    }
+
+    /**
      * Add settings link to the plugin entry in the Plugins list
      */
     public function getActions($request, $actionArgs): array
@@ -219,7 +235,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         }
 
         $contextId = (int) $context->getId();
-        if (!(bool) $this->getSetting($contextId, 'enabled')) {
+        if (!$this->getEnabled($contextId)) {
             return false;
         }
 
@@ -316,7 +332,7 @@ class WithdrawResearchPlugin extends GenericPlugin
         $val = parent::getSetting($contextId, $name);
         if ($val === null) {
             $defaults = [
-                'enabled' => true,
+                'enabled' => false,
                 'requireReason' => true,
                 'notifyEditors' => true,
                 'notifyAuthor' => true,
